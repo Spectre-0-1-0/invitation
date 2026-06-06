@@ -11,26 +11,38 @@ datasource db {
 }
 
 model Event {
-  id          String   @id @default(cuid())
-  title       String
-  description String?  @db.Text
-  date        DateTime
-  category    String   // academic, social, monumental, transition
-  location    String?
-  tags        Tag[]
-  memories    Memory[]
-  media       MediaFile[]
-  people      Person[] @relation("EventParticipants")
+  id            String   @id @default(cuid())
+  title         String
+  description   String?  @db.Text
+  date          DateTime // Primary display date
+  startDate     DateTime?
+  endDate       DateTime?
+  academicYear  String   // e.g., "2021-22"
+  category      String   // academic, social, monumental, transition
+  location      String?
+  organizers    String?  // comma-separated or JSON
 
-  // Scrapbook Metadata
-  importance  Int      @default(1) // 1-5
-  chapterId   String?
+  tags          Tag[]
+  memories      Memory[]
+  media         MediaFile[]
+  people        Person[] @relation("EventParticipants")
+  achievements  Achievement[]
+  documents     Document[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Scrapbook Rendering Metadata
+  importance    Int      @default(1) // 1-5
+  chapterId     String?
+  chapterCover  String?  // URL of the specific image to use as chapter cover
+  chapterQuote  String?  @db.Text
+  chapterMood   String?  // nostalgic, energetic, reflective, chaos
+  featured      Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([date])
   @@index([category])
+  @@index([academicYear])
 }
 
 model Person {
@@ -39,6 +51,7 @@ model Person {
   nickname       String?
   major          String
   graduationYear Int      @default(2025)
+  batch          String?  // e.g., "Batch A"
   quote          String?  @db.Text
   image          String?  // Profile photo URL
 
@@ -54,6 +67,7 @@ model Person {
 
   @@index([name])
   @@index([major])
+  @@index([batch])
 }
 
 model Memory {
@@ -135,11 +149,25 @@ model Achievement {
 
   personId    String
   person      Person   @relation(fields: [personId], references: [id])
+  eventId     String?
+  event       Event?   @relation(fields: [eventId], references: [id])
 
   createdAt   DateTime @default(now())
 
   @@index([personId])
+  @@index([eventId])
   @@index([category])
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  url         String
+  type        String   // pdf, doc, etc
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id])
+
+  createdAt   DateTime @default(now())
 }
 
 model Tag {
