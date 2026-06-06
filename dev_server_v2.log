@@ -16,3 +16,8 @@
  GET /timeline 200 in 7476ms
  ✓ Compiled /people in 416ms (1399 modules)
  GET /seniors 200 in 585ms
+ ✓ Compiled in 7.1s (733 modules)
+ ✓ Compiled in 408ms (733 modules)
+ ✓ Compiled in 383ms (733 modules)
+ ✓ Compiled in 869ms (733 modules)
+ ✓ Compiled in 562ms (733 modules)

@@ -4,13 +4,15 @@
     "title": "Dean's List",
     "recipientId": "alex-rivera",
     "date": "2024-01-15",
-    "category": "Academic"
+    "category": "academic",
+    "description": "Recognized for maintaining a 3.9 GPA during the rigorous design phase of Junior Year."
   },
   {
     "id": "hackathon-winner",
     "title": "Grand Prize - Spring Hackathon",
     "recipientId": "jane-doe",
     "date": "2023-04-20",
-    "category": "Competition"
+    "category": "research",
+    "description": "Led a team of 4 to build a sustainable energy management system for dorms."
   }
 ]

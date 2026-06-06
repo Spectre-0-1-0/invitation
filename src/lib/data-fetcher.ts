@@ -22,14 +22,11 @@ export async function getMemories(): Promise<Memory[]> {
 
 export async function getMemoriesBySenior(seniorId: string): Promise<Memory[]> {
   const memories = await getMemories();
-  return memories.filter((m) => m.taggedSeniors.includes(seniorId));
+  return memories.filter((m) => m.peopleInvolved?.includes(seniorId));
 }
 
 export async function getTimeline(): Promise<TimelineEvent[]> {
-  // Sort timeline by date descending
-  return [...(timelineData as TimelineEvent[])].sort((a, b) =>
-    new Date(b.period).getTime() - new Date(a.period).getTime()
-  );
+  return timelineData as TimelineEvent[];
 }
 
 export async function getMessages(): Promise<Message[]> {

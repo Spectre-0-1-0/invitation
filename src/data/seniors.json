@@ -2,40 +2,32 @@
   {
     "id": "alex-rivera",
     "name": "Alex Rivera",
+    "nickname": "River",
     "major": "Architecture",
+    "branch": "Design & Urban Planning",
+    "graduationYear": 2025,
     "quote": "We shape our buildings; thereafter they shape us. This studio was my home.",
     "image": "/content/profiles/alex-rivera.jpg",
     "achievements": ["Dean's List 2024", "National Design Award", "Student Council Rep"],
-    "favoriteMemoryId": "freshman-studio-night",
+    "memoryHighlights": ["The 48-hour studio lock-in", "Winning the inter-college sports meet"],
     "socialLinks": {
-      "instagram": "arivera_arch"
+      "instagram": "arivera_arch",
+      "linkedin": "alex-rivera-arch"
     }
   },
   {
     "id": "jane-doe",
     "name": "Jane Doe",
+    "nickname": "JD",
     "major": "Computer Science",
+    "branch": "Software Engineering",
+    "graduationYear": 2025,
     "quote": "It's not a bug, it's a feature of my college experience. Ready for the next build.",
     "image": "/content/profiles/jane-doe.jpg",
     "achievements": ["Hackathon Winner 2023", "STEM Mentor", "UPE Honor Society"],
-    "favoriteMemoryId": "midnight-pizza-2023"
-  },
-  {
-    "id": "marcus-thorne",
-    "name": "Marcus Thorne",
-    "major": "Economics",
-    "quote": "The marginal utility of one more cup of coffee is always positive.",
-    "image": "/content/profiles/marcus.jpg",
-    "achievements": ["Finance Club President", "Varsity Debate Team"],
-    "favoriteMemoryId": "library-sunrise"
-  },
-  {
-    "id": "sophia-lane",
-    "name": "Sophia Lane",
-    "major": "Fine Arts",
-    "quote": "Life is the art of drawing without an eraser. These four years were my masterpiece.",
-    "image": "/content/profiles/sophia.jpg",
-    "achievements": ["Solo Exhibition 2024", "Arts Council Award"],
-    "favoriteMemoryId": "football-win"
+    "memoryHighlights": ["Midnight debugging with pizza", "Teaching the freshman seminar"],
+    "socialLinks": {
+      "linkedin": "jane-doe-dev"
+    }
   }
 ]

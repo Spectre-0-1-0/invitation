@@ -1,17 +1,19 @@
-import { cn } from "@/lib/utils";
 import { Container } from "@/components/layout/Container";
 import { Section } from "@/components/layout/Section";
 import { Heading } from "@/components/ui/Heading";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FadeIn } from "@/components/animations/FadeIn";
+import { SeniorSpotlight } from "@/components/sections/SeniorSpotlight";
 import Link from "next/link";
 import { Camera, Users, MessageCircle, Calendar, ArrowRight, Heart } from "lucide-react";
-import { getMemories } from "@/lib/data-fetcher";
+import { getMemories, getSeniors } from "@/lib/data-fetcher";
+import { cn } from "@/lib/utils";
 
 export default async function Home() {
   const memories = await getMemories();
-  const featuredMemory = memories.find(m => m.featured);
+  const seniors = await getSeniors();
+  const spotlightSenior = seniors[0];
 
   const previews = [
     {
@@ -48,8 +50,8 @@ export default async function Home() {
     <div className="flex flex-col">
       {/* Immersive Hero Section */}
       <Section className="min-h-screen flex items-center relative overflow-hidden pt-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#D4AF3710_0%%,_transparent_40%%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_#1A2B4808_0%%,_transparent_40%%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#D4AF3710_0%%,_transparent_40%%%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_#1A2B4808_0%%,_transparent_40%%%)]" />
 
         <Container className="relative z-10">
           <div className="max-w-4xl mx-auto text-center">
@@ -88,7 +90,6 @@ export default async function Home() {
           </div>
         </Container>
 
-        {/* Scroll Indicator */}
         <FadeIn delay={1.2} className="absolute bottom-10 left-1/2 -translate-x-1/2 hidden md:block">
            <div className="flex flex-col items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-charcoal-muted/40">
               <span>Scroll to Begin</span>
@@ -97,35 +98,16 @@ export default async function Home() {
         </FadeIn>
       </Section>
 
-      {/* Narrative Spotlight */}
+      {/* Senior Spotlight Section */}
       <Section className="bg-white border-y border-parchment-muted overflow-hidden">
         <Container>
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-              <FadeIn direction="right">
-                 <div className="relative">
-                    <Card variant="polaroid" className="max-w-md mx-auto relative z-10">
-                       <div className="aspect-[4/5] bg-parchment-muted" />
-                    </Card>
-                    <div className="absolute -top-10 -right-10 w-64 h-64 bg-champagne-gold/5 rounded-full blur-3xl -z-10" />
-                    <div className="absolute -bottom-10 -left-10 p-6 bg-heritage-navy text-white rounded-md shadow-2xl z-20 max-w-[200px] -rotate-6">
-                       <p className="text-xs font-serif italic font-light">&quot;The first day we met in the quad. We had no idea what was coming.&quot;</p>
-                    </div>
-                 </div>
-              </FadeIn>
-
-              <FadeIn direction="left" delay={0.2}>
-                 <span className="text-xs font-mono uppercase tracking-[0.2em] text-champagne-gold mb-4 block">The Memory Spotlight</span>
-                 <Heading level={2} className="text-5xl md:text-6xl mb-8 leading-tight">A collection of <br /> shared history.</Heading>
-                 <p className="text-lg text-charcoal-muted leading-relaxed mb-10">
-                    From the high-stakes finals weeks to the midnight pizza runs,
-                    every moment was a brushstroke on the canvas of our college experience.
-                    We haven&apos;t just collected photos; we&apos;ve archived our growth.
-                 </p>
-                 <Link href="/timeline" className="inline-flex items-center gap-3 text-heritage-navy font-bold uppercase tracking-widest text-xs hover:text-champagne-gold transition-colors group">
-                    View our full timeline <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                 </Link>
-              </FadeIn>
-           </div>
+           <FadeIn>
+              <div className="mb-16">
+                 <span className="text-xs font-mono uppercase tracking-[0.3em] text-champagne-gold mb-2 block font-bold">Featured Story</span>
+                 <Heading level={2} className="text-4xl md:text-5xl">Moments of Impact</Heading>
+              </div>
+              <SeniorSpotlight senior={spotlightSenior} />
+           </FadeIn>
         </Container>
       </Section>
 

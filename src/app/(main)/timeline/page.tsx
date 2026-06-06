@@ -42,7 +42,7 @@ export default async function TimelinePage() {
                     <div className="relative p-10 bg-white rounded-md shadow-scrapbook border border-parchment-muted overflow-hidden">
                        <div className="absolute top-0 left-0 w-2 h-full bg-heritage-navy opacity-10" />
                        <Badge variant="secondary" className="mb-6 font-bold">{event.period}</Badge>
-                       <h2 className="font-serif text-3xl mb-6 text-heritage-navy leading-tight">{event.title}</h2>
+                       <h2 className="font-serif text-3xl mb-6 text-heritage-navy leading-tight">{event.milestone}</h2>
                        <p className="text-charcoal-muted leading-relaxed text-lg">{event.description}</p>
                     </div>
                   </div>
