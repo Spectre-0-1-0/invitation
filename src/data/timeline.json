@@ -1,0 +1,17 @@
+[
+  {
+    "id": "event-1",
+    "period": "Fall 2020",
+    "title": "Orientation Week",
+    "description": "Welcome to campus! Navigating the quad and meeting new friends.",
+    "importance": "major"
+  },
+  {
+    "id": "event-2",
+    "period": "Spring 2024",
+    "title": "Senior Gala",
+    "description": "A night of dancing and celebrating our achievements.",
+    "importance": "major",
+    "memoryId": "gala-night"
+  }
+]

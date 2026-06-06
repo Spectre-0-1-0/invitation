@@ -1,0 +1,16 @@
+[
+  {
+    "id": "dean-list-2024",
+    "title": "Dean's List",
+    "recipientId": "alex-rivera",
+    "date": "2024-01-15",
+    "category": "Academic"
+  },
+  {
+    "id": "hackathon-winner",
+    "title": "Grand Prize - Spring Hackathon",
+    "recipientId": "jane-doe",
+    "date": "2023-04-20",
+    "category": "Competition"
+  }
+]

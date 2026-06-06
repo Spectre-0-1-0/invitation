@@ -1,0 +1,23 @@
+[
+  {
+    "id": "alex-rivera",
+    "name": "Alex Rivera",
+    "major": "Architecture",
+    "quote": "Building dreams, one brick at a time.",
+    "image": "/content/profiles/alex-rivera.jpg",
+    "achievements": ["Dean's List 2024", "National Design Award"],
+    "favoriteMemoryId": "freshman-studio-night",
+    "socialLinks": {
+      "instagram": "arivera_arch"
+    }
+  },
+  {
+    "id": "jane-doe",
+    "name": "Jane Doe",
+    "major": "Computer Science",
+    "quote": "Hello, World! I'm ready for the next level.",
+    "image": "/content/profiles/jane-doe.jpg",
+    "achievements": ["Hackathon Winner 2023"],
+    "favoriteMemoryId": "midnight-pizza-2023"
+  }
+]

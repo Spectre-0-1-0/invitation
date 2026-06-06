@@ -1,0 +1,26 @@
+[
+  {
+    "id": "midnight-pizza-2023",
+    "type": "photo",
+    "category": "candid",
+    "title": "The Final 3 AM Pizza",
+    "description": "Celebrating the completion of the thesis projects at the local parlor.",
+    "url": "/content/gallery/pizza-night.jpg",
+    "date": "2023-11-15",
+    "taggedSeniors": ["alex-rivera", "jane-doe"],
+    "tags": ["senior-year", "thesis-completed"],
+    "featured": true
+  },
+  {
+    "id": "freshman-studio-night",
+    "type": "photo",
+    "category": "event",
+    "title": "First Night in the Studio",
+    "description": "The beginning of it all. Coffee and drafting boards.",
+    "url": "/content/gallery/studio-night.jpg",
+    "date": "2020-09-10",
+    "taggedSeniors": ["alex-rivera"],
+    "tags": ["freshman-year", "beginnings"],
+    "featured": false
+  }
+]
