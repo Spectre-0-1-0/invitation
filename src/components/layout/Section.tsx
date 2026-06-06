@@ -13,7 +13,7 @@ export function Section({ children, className, variant = "parchment", ...props }
   };
 
   return (
-    <section className={cn("py-12 md:py-24", variants[variant], className)} {...props}>
+    <section className={cn("py-16 md:py-32", variants[variant], className)} {...props}>
       {children}
     </section>
   );

@@ -2,9 +2,11 @@ import { Container } from "@/components/layout/Container";
 import { Section } from "@/components/layout/Section";
 import { Heading } from "@/components/ui/Heading";
 import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
+import { FadeIn } from "@/components/animations/FadeIn";
 import { getAlbums, getMemories } from "@/lib/data-fetcher";
 import Link from "next/link";
-import { Folder } from "lucide-react";
+import { Folder, Image as ImageIcon, Camera } from "lucide-react";
 
 export const metadata = { title: "Memory Gallery" };
 
@@ -13,60 +15,87 @@ export default async function GalleryPage() {
   const memories = await getMemories();
 
   return (
-    <Section>
+    <Section className="pt-20">
       <Container>
-        <Heading level={1} className="mb-12">Memory Gallery</Heading>
+        <div className="flex flex-col items-center text-center mb-24">
+          <FadeIn>
+            <span className="text-xs font-mono uppercase tracking-[0.3em] text-champagne-gold mb-6 block font-bold">Visual Archive</span>
+            <Heading level={1} className="text-5xl md:text-7xl mb-8">The <span className="italic font-light">Gallery</span></Heading>
+            <p className="text-lg md:text-xl text-charcoal-muted max-w-2xl mx-auto font-serif italic">
+               Every pixel a memory, every photo a story. Explore the albums and candids
+               that captured the spirit of the Class of 2025.
+            </p>
+          </FadeIn>
+        </div>
 
-        <div className="space-y-20">
+        <div className="space-y-32">
           {/* Albums Section */}
           <div>
-            <h2 className="text-xs font-mono uppercase tracking-[0.2em] text-champagne-gold mb-8 flex items-center gap-2">
-              <Folder size={14} /> Featured Albums
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {albums.map((album) => (
-                <Link key={album.id} href={`/gallery/album/${album.id}`} className="group">
-                  <div className="relative aspect-[16/10] bg-parchment-muted rounded-md overflow-hidden shadow-sm group-hover:shadow-md transition-all">
-                     <div className="absolute inset-0 bg-heritage-navy/20 group-hover:bg-heritage-navy/10 transition-colors" />
-                     <div className="absolute bottom-6 left-6 text-white">
-                        <h3 className="font-serif text-2xl">{album.title}</h3>
-                        <p className="text-xs font-mono uppercase tracking-widest mt-1 opacity-80">
-                           {album.memoryIds.length} Memories
+            <FadeIn>
+              <h2 className="text-xs font-mono uppercase tracking-[0.4em] text-champagne-gold mb-10 flex items-center gap-3">
+                <Folder size={14} /> Curated Collections
+              </h2>
+            </FadeIn>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              {albums.map((album, i) => (
+                <FadeIn key={album.id} delay={i * 0.1}>
+                  <Link href={`/gallery/${album.id}`} className="group block">
+                    <Card variant="scrapbook" className="p-3 bg-white">
+                      <div className="relative aspect-[16/10] bg-parchment-muted overflow-hidden">
+                         <div className="absolute inset-0 bg-heritage-navy/20 group-hover:bg-heritage-navy/10 transition-colors duration-500" />
+                         <div className="absolute inset-0 flex items-center justify-center">
+                            <Camera className="text-white/20 group-hover:scale-110 transition-transform duration-500" size={48} />
+                         </div>
+                      </div>
+                      <div className="mt-6 px-2 pb-2">
+                        <h3 className="font-serif text-2xl text-heritage-navy group-hover:text-champagne-gold transition-colors">{album.title}</h3>
+                        <p className="text-[10px] font-mono uppercase tracking-widest mt-2 text-charcoal-muted">
+                           {album.memoryIds.length} Captured Moments
                         </p>
-                     </div>
-                  </div>
-                </Link>
+                      </div>
+                    </Card>
+                  </Link>
+                </FadeIn>
               ))}
             </div>
           </div>
 
           {/* All Memories Masonry-style Grid */}
           <div>
-             <div className="flex items-end justify-between mb-8 border-b pb-4">
-                <h2 className="text-xs font-mono uppercase tracking-[0.2em] text-champagne-gold">All Moments</h2>
-                <div className="flex gap-4">
-                   <button className="text-[10px] font-bold uppercase tracking-widest text-heritage-navy border-b-2 border-heritage-navy">All</button>
-                   <button className="text-[10px] font-bold uppercase tracking-widest text-charcoal-muted hover:text-heritage-navy transition-colors">Candids</button>
-                   <button className="text-[10px] font-bold uppercase tracking-widest text-charcoal-muted hover:text-heritage-navy transition-colors">Events</button>
-                </div>
-             </div>
-
-             <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
-                {memories.map((memory) => (
-                  <div key={memory.id} className="break-inside-avoid bg-white p-2 rounded-md shadow-sm group cursor-pointer hover:shadow-md transition-all border border-parchment-muted">
-                    <div className="aspect-auto rounded-sm bg-parchment-muted overflow-hidden relative min-h-[200px]">
-                       <div className="absolute inset-0 bg-heritage-navy/0 group-hover:bg-heritage-navy/5 transition-colors" />
-                    </div>
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <Badge variant="outline" className="text-[10px] py-0">{memory.category}</Badge>
-                        <span className="text-[10px] font-mono text-charcoal-muted">{memory.date}</span>
-                      </div>
-                      <h4 className="font-serif text-lg text-heritage-navy group-hover:text-champagne-gold transition-colors">
-                        {memory.title}
-                      </h4>
-                    </div>
+             <FadeIn>
+               <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 border-b border-parchment-dark pb-6 gap-6">
+                  <div>
+                    <h2 className="text-xs font-mono uppercase tracking-[0.4em] text-champagne-gold flex items-center gap-3">
+                      <ImageIcon size={14} /> The Open Archive
+                    </h2>
+                    <p className="text-charcoal-muted text-xs mt-2 italic">A chronological stream of our shared days.</p>
                   </div>
+                  <div className="flex gap-4">
+                     <button className="text-[10px] font-bold uppercase tracking-widest text-heritage-navy border-b-2 border-heritage-navy pb-1">All</button>
+                     <button className="text-[10px] font-bold uppercase tracking-widest text-charcoal-muted hover:text-heritage-navy transition-colors pb-1">Candids</button>
+                     <button className="text-[10px] font-bold uppercase tracking-widest text-charcoal-muted hover:text-heritage-navy transition-colors pb-1">Events</button>
+                  </div>
+               </div>
+             </FadeIn>
+
+             <div className="columns-1 sm:columns-2 lg:columns-3 gap-8 space-y-8">
+                {memories.map((memory, i) => (
+                  <FadeIn key={memory.id} delay={i * 0.05}>
+                    <Card variant="polaroid" className="group cursor-pointer">
+                      <div className="aspect-auto bg-parchment-muted overflow-hidden relative min-h-[250px]">
+                         <div className="absolute inset-0 bg-heritage-navy/0 group-hover:bg-heritage-navy/5 transition-colors duration-500" />
+                      </div>
+                      <div className="mt-4 px-1">
+                        <div className="flex justify-between items-center mb-2">
+                          <Badge variant="outline" className="text-[9px] py-0 border-parchment-dark">{memory.category}</Badge>
+                          <span className="text-[9px] font-mono text-charcoal-muted opacity-60">{memory.date}</span>
+                        </div>
+                        <h4 className="font-serif text-base text-heritage-navy group-hover:text-champagne-gold transition-colors leading-tight">
+                          {memory.title}
+                        </h4>
+                      </div>
+                    </Card>
+                  </FadeIn>
                 ))}
              </div>
           </div>
