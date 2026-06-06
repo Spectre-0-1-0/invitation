@@ -22,5 +22,29 @@
     "taggedSeniors": ["alex-rivera"],
     "tags": ["freshman-year", "beginnings"],
     "featured": false
+  },
+  {
+    "id": "library-sunrise",
+    "type": "photo",
+    "category": "candid",
+    "title": "Library Sunrise",
+    "description": "When you realize the sun is up but the project still isn't done.",
+    "url": "/content/gallery/sunrise.jpg",
+    "date": "2024-03-12",
+    "taggedSeniors": ["jane-doe"],
+    "tags": ["studying", "all-nighter"],
+    "featured": true
+  },
+  {
+    "id": "football-win",
+    "type": "photo",
+    "category": "event",
+    "title": "Homecoming Victory",
+    "description": "Storming the field after the biggest win in a decade.",
+    "url": "/content/gallery/win.jpg",
+    "date": "2023-10-21",
+    "taggedSeniors": ["alex-rivera", "jane-doe"],
+    "tags": ["sports", "school-spirit"],
+    "featured": true
   }
 ]

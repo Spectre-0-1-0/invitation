@@ -2,12 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #FDFCF8;
-  --foreground: #333333;
+@layer base {
+  :root {
+    --background: #FDFCF8;
+    --foreground: #333333;
+    --heritage-navy: #1A2B48;
+    --champagne-gold: #D4AF37;
+    --burnt-sienna: #A0522D;
+  }
+
+  body {
+    @apply bg-parchment-base text-charcoal antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif text-heritage-navy;
+  }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
+@layer components {
+  .section-spacing {
+    @apply py-12 md:py-24;
+  }
+
+  .container-padding {
+    @apply px-4 md:px-6;
+  }
 }

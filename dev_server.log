@@ -1,0 +1,25 @@
+
+> college-memory-archive@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.0.3
+   - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 1968ms
+ ○ Compiling / ...
+ ✓ Compiled / in 4.9s (694 modules)
+ HEAD / 200 in 5451ms
+ GET / 200 in 143ms
+ ○ Compiling /people ...
+ ✓ Compiled /people in 896ms (666 modules)
+ GET /seniors 200 in 1298ms
+ ✓ Compiled /people/[slug] in 470ms (680 modules)
+ GET /seniors/alex-rivera 200 in 1916ms
+ ✓ Compiled /gallery in 325ms (684 modules)
+ GET /gallery 200 in 551ms
+ ✓ Compiled /timeline in 334ms (690 modules)
+ GET /timeline 200 in 534ms
+ ○ Compiling /tribute ...
+ ✓ Compiled /tribute in 2s (711 modules)
+ GET /tribute 200 in 2204ms

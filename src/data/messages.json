@@ -2,15 +2,27 @@
   {
     "id": "msg-1",
     "from": "Prof. Miller",
-    "content": "It's been a pleasure seeing you grow. Good luck, Class of 2025!",
+    "content": "It's been an absolute honor to witness your intellectual curiosity and growth over these four years. You aren't just students; you're the future of this field. Go make us proud.",
     "timestamp": "2024-05-01T10:00:00Z"
   },
   {
     "id": "msg-2",
     "from": "Liam Smith",
-    "content": "Best roomie ever! Let's stay in touch.",
+    "content": "Alex, thanks for the 2 AM drafting sessions and the constant supply of caffeine. I wouldn't have made it through Sophomore year without your structural engineering advice!",
     "targetId": "alex-rivera",
-    "relationship": "Roommate",
+    "relationship": "Studio Partner",
     "timestamp": "2024-05-15T18:30:00Z"
+  },
+  {
+    "id": "msg-3",
+    "from": "Sarah Chen",
+    "content": "To the whole Class of 2025: May your wifi be strong and your coffee be stronger in the real world. We did it!",
+    "timestamp": "2024-05-18T09:15:00Z"
+  },
+  {
+    "id": "msg-4",
+    "from": "Admin Team",
+    "content": "Congratulations to all graduating seniors. Please remember to return your library books before the final ceremony!",
+    "timestamp": "2024-05-20T14:00:00Z"
   }
 ]

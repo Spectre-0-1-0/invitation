@@ -1,17 +1,38 @@
 [
   {
     "id": "event-1",
-    "period": "Fall 2020",
+    "period": "Fall 2021",
     "title": "Orientation Week",
-    "description": "Welcome to campus! Navigating the quad and meeting new friends.",
+    "description": "The nervous first steps onto the quad. Meeting roommates who would become lifelong friends.",
     "importance": "major"
   },
   {
+    "id": "event-1.5",
+    "period": "Spring 2022",
+    "title": "The Great Quad Snowball Fight",
+    "description": "Classes were canceled, but the competitive spirit was higher than ever.",
+    "importance": "minor"
+  },
+  {
     "id": "event-2",
+    "period": "Fall 2023",
+    "title": "Junior Year Abroad",
+    "description": "Half the class scattered across the globe, bringing back stories from every continent.",
+    "importance": "major"
+  },
+  {
+    "id": "event-3",
     "period": "Spring 2024",
-    "title": "Senior Gala",
-    "description": "A night of dancing and celebrating our achievements.",
+    "title": "The Charity Gala",
+    "description": "Dressed to the nines, we raised over $50k for the local community center.",
     "importance": "major",
     "memoryId": "gala-night"
+  },
+  {
+    "id": "event-4",
+    "period": "Spring 2025",
+    "title": "Final Thesis Submission",
+    "description": "The collective sigh of relief heard across the entire campus library.",
+    "importance": "major"
   }
 ]
