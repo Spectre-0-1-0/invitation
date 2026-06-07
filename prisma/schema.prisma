@@ -50,10 +50,17 @@ model Person {
   name           String
   nickname       String?
   major          String
+  branch         String?
   graduationYear Int      @default(2025)
   batch          String?  // e.g., "Batch A"
+  status         String   @default("Senior") // Senior, Junior, Alumni, Faculty
+
+  bio            String?  @db.Text
+  favoriteMemory String?  @db.Text
   quote          String?  @db.Text
   image          String?  // Profile photo URL
+  socialLinks    Json?    // { instagram, linkedin, twitter, portfolio }
+  contactInfo    String?  // Optional email or phone
 
   events         Event[]  @relation("EventParticipants")
   memories       Memory[] @relation("PersonMemories")
@@ -62,12 +69,39 @@ model Person {
   messagesSent   Message[] @relation("MessageSender")
   achievements   Achievement[]
 
+  // Relationships
+  relationships  Relationship[] @relation("PersonSource")
+  relatedBy      Relationship[] @relation("PersonTarget")
+
+  // Scrapbook Rendering Metadata
+  handwritingPersona String?  // ID of handwriting persona (neat, chaotic, etc)
+  highlightPhotoUrl  String?
+  signatureMoment    String?  @db.Text
+  personalityNotes   String?  @db.Text
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@index([name])
   @@index([major])
+  @@index([branch])
   @@index([batch])
+}
+
+model Relationship {
+  id          String   @id @default(cuid())
+  type        String   // friend, roommate, club-member, teammate, class-rep
+
+  personId    String
+  person      Person   @relation("PersonSource", fields: [personId], references: [id])
+  targetId    String
+  target      Person   @relation("PersonTarget", fields: [targetId], references: [id])
+
+  context     String?  // e.g., "Coding Club", "Room 302"
+
+  createdAt   DateTime @default(now())
+
+  @@unique([personId, targetId, type])
 }
 
 model Memory {
