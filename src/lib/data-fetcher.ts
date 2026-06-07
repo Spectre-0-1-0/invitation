@@ -73,7 +73,8 @@ export async function getTimeline(): Promise<TimelineEvent[]> {
 
 export async function getMessages(): Promise<Message[]> {
   const messages = await prisma.message.findMany({
-    orderBy: { timestamp: 'desc' }
+    orderBy: { timestamp: 'desc' },
+    include: { fromPerson: true, targetPerson: true, event: true }
   })
   return messages as unknown as Message[]
 }
@@ -97,4 +98,28 @@ export async function getAlbums(): Promise<GalleryAlbum[]> {
 
 export async function getAchievements(): Promise<Achievement[]> {
   return prisma.achievement.findMany() as unknown as Achievement[]
+}
+
+export async function getEventBySlug(slug: string): Promise<Event | undefined> {
+  const event = await prisma.event.findUnique({
+    where: { slug },
+    include: {
+      media: {
+        orderBy: [{ featured: 'desc' }, { importance: 'desc' }, { createdAt: 'desc' }]
+      },
+      messages: {
+        include: { fromPerson: true }
+      },
+      participants: true,
+      batch: true
+    }
+  })
+  return (event || undefined) as unknown as Event
+}
+
+export async function getEvents(): Promise<Event[]> {
+  return prisma.event.findMany({
+    include: { batch: true },
+    orderBy: { startDate: 'desc' }
+  }) as unknown as Event[]
 }

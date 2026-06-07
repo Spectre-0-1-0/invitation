@@ -34,6 +34,7 @@ const config: Config = {
         serif: ["var(--font-playfair)", "serif"],
         sans: ["var(--font-inter)", "sans-serif"],
         mono: ["var(--font-jetbrains)", "monospace"],
+        handwritten: ["var(--font-caveat)", "cursive"],
       },
       borderRadius: {
         soft: "8px",

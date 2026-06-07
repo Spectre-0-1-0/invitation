@@ -16,12 +16,15 @@ export type Batch = PrismaBatch & {
 export type Event = PrismaEvent & {
   batch?: Batch
   media?: Media[]
+  messages?: Message[]
+  participants?: Person[]
 }
 
 export type Person = PrismaPerson & {
   batch?: Batch
   achievements?: Achievement[]
   taggedInMedia?: Media[]
+  eventsParticipated?: Event[]
 }
 
 export type Media = PrismaMedia & {
@@ -36,6 +39,7 @@ export type Achievement = PrismaAchievement & {
 export type Message = PrismaMessage & {
   fromPerson?: Person
   targetPerson?: Person
+  event?: Event
 }
 
 export type Meme = PrismaMeme

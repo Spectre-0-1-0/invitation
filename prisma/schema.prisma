@@ -27,7 +27,7 @@ model Event {
   shortDescription  String?
   eventType         String?   // e.g., "Party", "Sports", "Academic"
   startDate         DateTime?
-  endDate           DateTime?
+  endDate          DateTime?
   academicYear      String?
   location          String?
   coverMediaId      String?
@@ -39,6 +39,7 @@ model Event {
   organizerNotes    String?
   tags              String[]
   media             Media[]
+  messages          Message[]
   participants      Person[]  @relation("EventParticipants")
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -50,20 +51,20 @@ model Person {
   batch            Batch         @relation(fields: [batchId], references: [id])
   name             String
   slug             String        @unique
-  major            String?
-  quote            String?
-  image            String?
-  socialLinks      Json?         // { instagram: string, linkedin: string, twitter: string }
+  major          String?
+  quote          String?
+  image          String?
+  socialLinks    Json?         // { instagram: string, linkedin: string, twitter: string }
   favoriteMemoryId String?
   signatureMoment  String?
   yearbookQuote    String?
-  achievements     Achievement[]
-  taggedInMedia    Media[]       @relation("MediaParticipants")
+  achievements   Achievement[]
+  taggedInMedia  Media[]       @relation("MediaParticipants")
   eventsParticipated Event[]     @relation("EventParticipants")
   messagesSent     Message[]     @relation("SentMessages")
   messagesReceived Message[]   @relation("ReceivedMessages")
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 enum MediaType {
@@ -131,6 +132,8 @@ model Message {
   fromPerson   Person?  @relation("SentMessages", fields: [fromPersonId], references: [id])
   targetId     String?
   targetPerson Person?  @relation("ReceivedMessages", fields: [targetId], references: [id])
+  eventId      String?
+  event        Event?   @relation(fields: [eventId], references: [id])
   content      String
   category     String?  // thank-you, funny, appreciation, farewell
   relationship String?
