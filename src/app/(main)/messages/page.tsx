@@ -12,7 +12,7 @@ export default async function MessagesPage() {
   const messages = await getMessages();
   const seniors = await getSeniors();
 
-  const getCategoryIcon = (category: string) => {
+  const getCategoryIcon = (category: string | null) => {
     switch (category) {
       case 'funny': return <Laugh size={14} />;
       case 'thank-you': return <Heart size={14} />;
@@ -57,7 +57,7 @@ export default async function MessagesPage() {
                   <div className="flex items-center gap-2 mb-6">
                     <Badge variant="outline" className="flex items-center gap-1.5 text-[9px] py-1 px-3 border-parchment-dark/50 text-charcoal-muted">
                       {getCategoryIcon(message.category)}
-                      {message.category.replace('-', ' ')}
+                      {message.category?.replace('-', ' ') || 'Message'}
                     </Badge>
                     {target && (
                       <Badge variant="secondary" className="text-[9px] py-1 px-3 font-bold">
@@ -72,7 +72,7 @@ export default async function MessagesPage() {
 
                   <div className="mt-auto pt-8 border-t border-parchment-muted flex justify-between items-end">
                     <div>
-                      <span className="block text-sm font-bold text-heritage-navy tracking-tight">{message.from}</span>
+                      <span className="block text-sm font-bold text-heritage-navy tracking-tight">{message.fromName}</span>
                       {message.relationship && (
                         <span className="block text-[10px] font-mono uppercase tracking-widest text-charcoal-muted mt-1 opacity-70">{message.relationship}</span>
                       )}

@@ -50,7 +50,7 @@ export default async function TimelinePage() {
               </div>
 
               <div className="absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-heritage-navy border-8 border-parchment-base flex items-center justify-center text-white hidden md:flex z-20 shadow-xl">
-                 {event.importance === "major" ? <Milestone size={18} /> : <Compass size={18} />}
+                 {event.featured ? <Milestone size={18} /> : <Compass size={18} />}
               </div>
 
               <div className="hidden md:block md:w-[45%]" />

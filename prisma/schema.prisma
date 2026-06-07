@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Batch {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  graduationYear Int
+  events         Event[]
+  people         Person[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Event {
+  id               String    @id @default(cuid())
+  batchId          String
+  batch            Batch     @relation(fields: [batchId], references: [id])
+  title            String
+  slug             String    @unique
+  description      String?
+  shortDescription String?
+  eventType        String?   // e.g., "Party", "Sports", "Academic"
+  startDate        DateTime?
+  endDate          DateTime?
+  academicYear     String?
+  location         String?
+  coverMediaId     String?
+  chapterQuote     String?
+  chapterMood      String?
+  chapterColorTheme String?
+  featured         Boolean   @default(false)
+  organizerNotes   String?
+  tags             String[]
+  media            Media[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Person {
+  id               String        @id @default(cuid())
+  batchId          String
+  batch            Batch         @relation(fields: [batchId], references: [id])
+  name             String
+  slug             String        @unique
+  major            String?
+  quote            String?
+  image            String?
+  socialLinks      Json?         // { instagram: string, linkedin: string, twitter: string }
+  favoriteMemoryId String?
+  signatureMoment  String?
+  yearbookQuote    String?
+  achievements     Achievement[]
+  taggedInMedia    Media[]       @relation("MediaParticipants")
+  messagesSent     Message[]     @relation("SentMessages")
+  messagesReceived Message[]   @relation("ReceivedMessages")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+enum MediaType {
+  PHOTO
+  VIDEO
+  DOCUMENT
+  POSTER
+  MEME
+  SCREENSHOT
+  AUDIO
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Media {
+  id                String           @id @default(cuid())
+  eventId           String
+  event             Event            @relation(fields: [eventId], references: [id])
+  type              MediaType
+  category          String?          // e.g., "Candid", "Group", "Highlight"
+  title             String?
+  description       String?
+  caption           String?
+  handwrittenCaption String?
+  url               String
+  thumbnailUrl      String?
+  fileSize          Int?
+  mimeType          String?
+  metadata          Json?            // EXIF data, duration, etc.
+  processingStatus  ProcessingStatus @default(PENDING)
+  folderPath        String?          // To preserve folder structure from ZIP/Folder uploads
+  featured          Boolean          @default(false)
+  importance        Int              @default(0)
+  displayPriority   Int              @default(0)
+  chapterPlacement  Int?
+  highlightScore    Float            @default(0)
+  date              DateTime?
+  participants      Person[]         @relation("MediaParticipants")
+  uploaderId        String?          // For future auth integration
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  personId    String
+  person      Person   @relation(fields: [personId], references: [id])
+  title       String
+  description String?
+  date        DateTime?
+  category    String?  // Academic, Sports, etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Message {
+  id           String   @id @default(cuid())
+  fromName     String
+  fromPersonId String?
+  fromPerson   Person?  @relation("SentMessages", fields: [fromPersonId], references: [id])
+  targetId     String?
+  targetPerson Person?  @relation("ReceivedMessages", fields: [targetId], references: [id])
+  content      String
+  category     String?  // thank-you, funny, appreciation, farewell
+  relationship String?
+  timestamp    DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Meme {
+  id            String   @id @default(cuid())
+  url           String
+  caption       String?
+  originContext String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

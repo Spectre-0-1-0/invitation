@@ -19,12 +19,13 @@ export default async function SeniorProfilePage({ params }: any) {
   if (!senior) notFound();
 
   const memories = await getMemoriesBySenior(senior.id);
+  const socialLinks = senior.socialLinks as any;
 
   return (
     <div className="flex flex-col">
       <Section className="pb-0">
         <Container>
-          <Link href="/seniors" className="text-xs font-bold uppercase tracking-widest text-charcoal-muted hover:text-heritage-navy transition-colors">
+          <Link href="/people" className="text-xs font-bold uppercase tracking-widest text-charcoal-muted hover:text-heritage-navy transition-colors">
             &larr; Back to Seniors
           </Link>
 
@@ -32,8 +33,8 @@ export default async function SeniorProfilePage({ params }: any) {
             <div className="md:col-span-5 lg:col-span-4">
               <div className="aspect-[4/5] rounded-md bg-parchment-muted border-8 border-white shadow-lg relative">
                 <div className="absolute top-4 right-4 flex gap-2">
-                   {senior.socialLinks?.instagram && (
-                     <a href={`https://instagram.com/${senior.socialLinks.instagram}`} className="p-2 bg-white/90 rounded-full text-heritage-navy hover:text-champagne-gold transition-colors">
+                   {socialLinks?.instagram && (
+                     <a href={`https://instagram.com/${socialLinks.instagram}`} className="p-2 bg-white/90 rounded-full text-heritage-navy hover:text-champagne-gold transition-colors">
                        <Instagram size={18} />
                      </a>
                    )}
@@ -56,10 +57,10 @@ export default async function SeniorProfilePage({ params }: any) {
                 <div>
                   <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-champagne-gold mb-4">Achievements</h3>
                   <ul className="space-y-3">
-                    {senior.achievements.map((achievement, i) => (
+                    {senior.achievements?.map((achievement: any, i: number) => (
                       <li key={i} className="flex items-start gap-3">
                         <div className="w-1.5 h-1.5 rounded-full bg-heritage-navy mt-1.5" />
-                        <span className="text-sm text-charcoal">{achievement}</span>
+                        <span className="text-sm text-charcoal">{achievement.title}</span>
                       </li>
                     ))}
                   </ul>
@@ -93,7 +94,7 @@ export default async function SeniorProfilePage({ params }: any) {
                     <div className="p-4">
                       <div className="flex justify-between items-start mb-2">
                         <Badge variant="outline" className="text-[10px] py-0">{memory.category}</Badge>
-                        <span className="text-[10px] font-mono text-charcoal-muted">{memory.date}</span>
+                        <span className="text-[10px] font-mono text-charcoal-muted">{memory.date?.toLocaleDateString()}</span>
                       </div>
                       <h4 className="font-serif text-lg text-heritage-navy group-hover:text-champagne-gold transition-colors">
                         {memory.title}

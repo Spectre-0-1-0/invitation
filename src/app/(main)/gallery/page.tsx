@@ -88,7 +88,7 @@ export default async function GalleryPage() {
                       <div className="mt-4 px-1">
                         <div className="flex justify-between items-center mb-2">
                           <Badge variant="outline" className="text-[9px] py-0 border-parchment-dark">{memory.category}</Badge>
-                          <span className="text-[9px] font-mono text-charcoal-muted opacity-60">{memory.date}</span>
+                          <span className="text-[9px] font-mono text-charcoal-muted opacity-60">{memory.date?.toLocaleDateString()}</span>
                         </div>
                         <h4 className="font-serif text-base text-heritage-navy group-hover:text-champagne-gold transition-colors leading-tight">
                           {memory.title}
