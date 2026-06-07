@@ -22,7 +22,12 @@ export async function POST(request: Request) {
 
 export async function GET() {
   const batches = await prisma.batch.findMany({
-    include: { events: true },
+    include: {
+      events: true,
+      _count: {
+        select: { events: true, people: true }
+      }
+    },
     orderBy: { graduationYear: 'desc' }
   })
   return NextResponse.json(batches)

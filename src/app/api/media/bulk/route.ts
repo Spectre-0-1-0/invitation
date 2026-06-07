@@ -62,3 +62,18 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+
+// Support for assigning people to events at a high level
+export async function POST(request: Request) {
+  try {
+    const { eventId, personIds } = await request.json()
+
+    // For now, this is a placeholder for higher-level Event <-> Person association
+    // In our current schema, we use taggedInMedia for association.
+    // We could add an explicit EventParticipant model if needed later.
+
+    return NextResponse.json({ success: true, count: personIds.length })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}

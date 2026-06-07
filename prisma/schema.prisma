@@ -18,28 +18,30 @@ model Batch {
 }
 
 model Event {
-  id               String    @id @default(cuid())
-  batchId          String
-  batch            Batch     @relation(fields: [batchId], references: [id])
-  title            String
-  slug             String    @unique
-  description      String?
-  shortDescription String?
-  eventType        String?   // e.g., "Party", "Sports", "Academic"
-  startDate        DateTime?
-  endDate          DateTime?
-  academicYear     String?
-  location         String?
-  coverMediaId     String?
-  chapterQuote     String?
-  chapterMood      String?
+  id                String    @id @default(cuid())
+  batchId           String
+  batch             Batch     @relation(fields: [batchId], references: [id])
+  title             String
+  slug              String    @unique
+  description       String?
+  shortDescription  String?
+  eventType         String?   // e.g., "Party", "Sports", "Academic"
+  startDate         DateTime?
+  endDate           DateTime?
+  academicYear      String?
+  location          String?
+  coverMediaId      String?
+  chapterQuote      String?
+  chapterMood       String?
   chapterColorTheme String?
-  featured         Boolean   @default(false)
-  organizerNotes   String?
-  tags             String[]
-  media            Media[]
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  featured          Boolean   @default(false)
+  isArchived        Boolean   @default(false)
+  organizerNotes    String?
+  tags              String[]
+  media             Media[]
+  participants      Person[]  @relation("EventParticipants")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model Person {
@@ -57,6 +59,7 @@ model Person {
   yearbookQuote    String?
   achievements     Achievement[]
   taggedInMedia    Media[]       @relation("MediaParticipants")
+  eventsParticipated Event[]     @relation("EventParticipants")
   messagesSent     Message[]     @relation("SentMessages")
   messagesReceived Message[]   @relation("ReceivedMessages")
   createdAt        DateTime      @default(now())
