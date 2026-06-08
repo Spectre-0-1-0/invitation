@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Batch {
+  id        String   @id @default(cuid())
+  name      String   // e.g., "Class of 2025"
+  year      Int
+  people    Person[]
+  events    Event[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Person {
+  id               String        @id @default(cuid())
+  slug             String        @unique
+  name             String
+  nickname         String?
+  major            String
+  branch           String?
+  graduationYear   Int
+  quote            String?
+  image            String?       // Profile image URL
+  socialLinks      Json?         // { instagram, linkedin, twitter }
+
+  batchId          String
+  batch            Batch         @relation(fields: [batchId], references: [id])
+
+  achievements     Achievement[]
+  memories         Media[]       @relation("PeopleInMedia")
+  messagesSent     Message[]     @relation("MessageFrom")
+  messagesReceived Message[]     @relation("MessageTo")
+
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model Event {
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  title             String
+  description       String?
+  date              DateTime
+  location          String?
+  type              String   // e.g., "Orientation", "Farewell", "Sports Fest"
+  importance        String   @default("minor") // "major" | "minor"
+  featured          Boolean  @default(false)
+
+  batchId           String
+  batch             Batch    @relation(fields: [batchId], references: [id])
+
+  media             Media[]
+  messages          Message[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Media {
+  id              String   @id @default(cuid())
+  type            String   // "photo" | "video" | "document" | "poster" | "meme"
+  category        String?  // "candid" | "event" | "milestone" | "farewell" | "trip" | "classroom"
+  url             String
+  thumbnailUrl    String?
+  title           String?
+  description     String?
+  date            DateTime?
+  location        String?
+  tags            String[]
+  featured        Boolean  @default(false)
+  hiddenGem       Boolean  @default(false)
+  highlightScore  Int      @default(0)
+
+  eventId         String?
+  event           Event?   @relation(fields: [eventId], references: [id])
+
+  people          Person[] @relation("PeopleInMedia")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Message {
+  id           String   @id @default(cuid())
+  fromName     String
+  fromPersonId String?
+  fromPerson   Person?  @relation("MessageFrom", fields: [fromPersonId], references: [id])
+
+  toPersonId   String?
+  toPerson     Person?  @relation("MessageTo", fields: [toPersonId], references: [id])
+
+  eventId      String?
+  event        Event?   @relation(fields: [eventId], references: [id])
+
+  content      String
+  category     String   // "thank-you" | "funny" | "appreciation" | "farewell" | "inside-joke" | "emotional" | "memory"
+  relationship String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String   // "academic" | "placement" | "research" | "club" | "sports"
+  date        DateTime?
+
+  personId    String
+  person      Person   @relation(fields: [personId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Meme {
+  id            String   @id @default(cuid())
+  url           String
+  caption       String?
+  originContext String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+}
