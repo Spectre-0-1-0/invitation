@@ -51,12 +51,13 @@ model Person {
   batch            Batch         @relation(fields: [batchId], references: [id])
   name             String
   slug             String        @unique
-  major          String?
-  quote          String?
-  image          String?
+  major            String?
+  quote            String?
+  image            String?
   socialLinks    Json?         // { instagram: string, linkedin: string, twitter: string }
   favoriteMemoryId String?
-  signatureMoment  String?
+  signatureMomentMediaId String?
+  signatureMomentText String?
   yearbookQuote    String?
   achievements   Achievement[]
   taggedInMedia  Media[]       @relation("MediaParticipants")

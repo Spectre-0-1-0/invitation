@@ -6,6 +6,7 @@ import { FadeIn } from "@/components/animations/FadeIn";
 import { getSeniors } from "@/lib/data-fetcher";
 import Link from "next/link";
 import { Search, Sparkles } from "lucide-react";
+import Image from "next/image";
 
 export const metadata = { title: "The Seniors" };
 
@@ -38,9 +39,16 @@ export default async function SeniorsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-16">
           {seniors.map((senior, i) => (
             <FadeIn key={senior.id} delay={i * 0.05}>
-              <Link href={`/seniors/${senior.id}`} className="group block">
+              <Link href={`/people/${senior.slug}`} className="group block">
                 <Card variant="scrapbook" className="h-full bg-white p-2">
                   <div className="relative aspect-[4/5] bg-parchment-muted overflow-hidden group-hover:grayscale-0 grayscale-[0.3] transition-all duration-700">
+                    {senior.image ? (
+                      <Image src={senior.image} alt={senior.name} fill className="object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-heritage-navy/10 font-serif italic text-4xl">
+                        {senior.name[0]}
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-heritage-navy/5 mix-blend-multiply" />
                     <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                        <div className="p-2 bg-white/90 rounded-full text-heritage-navy shadow-sm">

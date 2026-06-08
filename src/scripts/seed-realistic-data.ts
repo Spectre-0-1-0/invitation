@@ -3,7 +3,7 @@ import { PrismaClient, MediaType, ProcessingStatus } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('Seeding realistic scenarios for Sprint 6...')
+  console.log('Seeding enhanced realistic data for Sprint 7...')
 
   const batch = await prisma.batch.upsert({
     where: { id: 'batch-2026' },
@@ -16,10 +16,13 @@ async function main() {
     }
   })
 
-  // Create a default uploader/person if needed
+  // Create People
   const rahul = await prisma.person.upsert({
     where: { slug: 'rahul-sharma' },
-    update: {},
+    update: {
+      quote: 'Building the future, one line of code at a time.',
+      yearbookQuote: 'It was never about the grades, it was about the 3 AM debugging sessions.',
+    },
     create: {
       id: 'rahul-sharma',
       batchId: batch.id,
@@ -33,7 +36,10 @@ async function main() {
 
   const priya = await prisma.person.upsert({
     where: { slug: 'priya-patel' },
-    update: {},
+    update: {
+      quote: 'Designing spaces that tell stories.',
+      yearbookQuote: 'Architecting my own destiny.',
+    },
     create: {
       id: 'priya-patel',
       batchId: batch.id,
@@ -45,40 +51,34 @@ async function main() {
     }
   })
 
+  // Create Events
   const events = [
     {
       title: 'Freshers Party 2023',
       slug: 'freshers-party-2023',
-      description: 'Where the journey began. Neon lights, loud music, and the first of many lifelong friendships. We walked in as strangers and left as a tribe.',
+      description: 'Where the journey began. Neon lights, loud music, and the first of many lifelong friendships.',
       chapterQuote: 'Everything started here.',
       chapterMood: 'EXCITED',
-      chapterColorTheme: '#D4AF37',
       featured: true,
-      location: 'Grand Ballroom',
       startDate: new Date('2023-09-15'),
-      eventType: 'Party'
     },
     {
       title: 'Sports Fest 2024',
       slug: 'sports-fest-2024',
-      description: 'Victory, sweat, and team spirit. The roar of the crowd and the thrill of the game. We pushed our limits and celebrated every win, together.',
+      description: 'Victory, sweat, and team spirit. The roar of the crowd and the thrill of the game.',
       chapterQuote: 'Strength in unity.',
       chapterMood: 'ENERGETIC',
       featured: true,
-      location: 'University Stadium',
       startDate: new Date('2024-03-20'),
-      eventType: 'Sports'
     },
     {
       title: 'Farewell 2026',
       slug: 'farewell-2026',
-      description: 'The final goodbye. Not just an end, but a new beginning. Tears, hugs, and the realization that these four years were the best of our lives.',
+      description: 'The final goodbye. Not just an end, but a new beginning.',
       chapterQuote: 'Till we meet again.',
       chapterMood: 'REFLECTIVE',
       featured: true,
-      location: 'Central Lawn',
       startDate: new Date('2026-05-10'),
-      eventType: 'Ceremony'
     }
   ]
 
@@ -95,33 +95,59 @@ async function main() {
       }
     })
 
-    // Create featured media for the event
-    await prisma.media.create({
+    // Create Featured Media
+    const media = await prisma.media.create({
       data: {
         eventId: event.id,
         type: MediaType.PHOTO,
         url: 'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&q=80&w=1200',
-        title: 'Group Photo',
+        title: `${event.title} Highlight`,
         featured: true,
         importance: 10,
-        handwrittenCaption: 'The whole squad!',
+        participants: {
+          connect: [{ id: rahul.id }, { id: priya.id }]
+        },
         processingStatus: ProcessingStatus.COMPLETED
       }
     })
 
-    // Create a message for the event
+    // Set Highlights for Rahul
+    if (event.slug === 'freshers-party-2023') {
+       await prisma.person.update({
+         where: { id: rahul.id },
+         data: {
+           favoriteMemoryId: media.id,
+           signatureMomentMediaId: media.id,
+           signatureMomentText: 'The moment we realized this was going to be the best four years.'
+         }
+       })
+    }
+
+    // Bidirectional Messages
+    await prisma.message.create({
+      data: {
+        eventId: event.id,
+        fromName: 'Priya Patel',
+        fromPersonId: priya.id,
+        targetId: rahul.id,
+        content: `Rahul, remember when you lost your shoes at ${event.title}? Classic.`,
+        category: 'funny'
+      }
+    })
+
     await prisma.message.create({
       data: {
         eventId: event.id,
         fromName: 'Rahul Sharma',
         fromPersonId: rahul.id,
-        content: `This ${event.title} was unforgettable! Can't wait for the next one.`,
-        category: 'funny'
+        targetId: priya.id,
+        content: `Thanks for keeping me sane during ${event.title}, Priya.`,
+        category: 'thank-you'
       }
     })
   }
 
-  console.log('Seeded realistic events, participants, media, and messages.')
+  console.log('Enhanced seed data completed successfully.')
 }
 
 main()

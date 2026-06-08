@@ -25,6 +25,8 @@ export type Person = PrismaPerson & {
   achievements?: Achievement[]
   taggedInMedia?: Media[]
   eventsParticipated?: Event[]
+  messagesSent?: Message[]
+  messagesReceived?: Message[]
 }
 
 export type Media = PrismaMedia & {
