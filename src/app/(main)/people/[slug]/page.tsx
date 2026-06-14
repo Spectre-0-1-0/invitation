@@ -1,115 +1,165 @@
-import { Container } from "@/components/layout/Container";
-import { Section } from "@/components/layout/Section";
-import { Heading } from "@/components/ui/Heading";
-import { Badge } from "@/components/ui/Badge";
-import { getSeniorBySlug, getMemoriesBySenior } from "@/lib/data-fetcher";
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import { Instagram, Quote } from "lucide-react";
+import { getSeniorProfile, getMediaById } from "@/lib/data-fetcher"
+import { notFound } from "next/navigation"
+import { ProfileYearbookHeader } from "@/components/profile/ProfileYearbookHeader"
+import { MemoryTimeline } from "@/components/profile/MemoryTimeline"
+import { FriendshipCluster } from "@/components/profile/FriendshipCluster"
+import { ScrapbookSection } from "@/components/scrapbook/ScrapbookSection"
+import { Polaroid } from "@/components/scrapbook/Polaroid"
+import { HandwrittenNote } from "@/components/scrapbook/HandwrittenNote"
+import { Heading } from "@/components/ui/Heading"
+import { MemoryCluster } from "@/components/scrapbook/MemoryCluster"
+import { ArrowRight, Star, Heart, MessageSquare } from "lucide-react"
+import Link from "next/link"
 
 export async function generateMetadata({ params }: any) {
-  const { slug } = await params;
-  const senior = await getSeniorBySlug(slug);
-  return { title: senior?.name || "Senior Profile" };
+  const { slug } = await params
+  const senior = await getSeniorProfile(slug)
+  return { title: senior?.name || "Senior Profile" }
 }
 
 export default async function SeniorProfilePage({ params }: any) {
-  const { slug } = await params;
-  const senior = await getSeniorBySlug(slug);
-  if (!senior) notFound();
+  const { slug } = await params
+  const senior = (await getSeniorProfile(slug)) as any
+  if (!senior) notFound()
 
-  const memories = await getMemoriesBySenior(senior.id);
+  const favoriteMemory = senior.favoriteMemoryId ? await getMediaById(senior.favoriteMemoryId) : null
+  const signatureMoment = senior.signatureMomentMediaId ? await getMediaById(senior.signatureMomentMediaId) : null
+
+  const timelineEntries = senior.eventsParticipated.map((event: any) => ({
+    id: event.id,
+    year: event.startDate ? new Date(event.startDate).getFullYear().toString() : '2025',
+    title: event.title,
+    description: event.shortDescription || event.description,
+    media: event.media,
+    slug: event.slug
+  }))
 
   return (
-    <div className="flex flex-col">
-      <Section className="pb-0">
-        <Container>
-          <Link href="/seniors" className="text-xs font-bold uppercase tracking-widest text-charcoal-muted hover:text-heritage-navy transition-colors">
-            &larr; Back to Seniors
-          </Link>
+    <div className="bg-parchment-base min-h-screen">
+      <ProfileYearbookHeader
+        name={senior.name}
+        image={senior.image || undefined}
+        major={senior.major || undefined}
+        batch={senior.batch?.name}
+        quote={senior.quote || undefined}
+      />
 
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-12 gap-12">
-            <div className="md:col-span-5 lg:col-span-4">
-              <div className="aspect-[4/5] rounded-md bg-parchment-muted border-8 border-white shadow-lg relative">
-                <div className="absolute top-4 right-4 flex gap-2">
-                   {senior.socialLinks?.instagram && (
-                     <a href={`https://instagram.com/${senior.socialLinks.instagram}`} className="p-2 bg-white/90 rounded-full text-heritage-navy hover:text-champagne-gold transition-colors">
-                       <Instagram size={18} />
-                     </a>
-                   )}
+      {/* Highlights Section */}
+      {(favoriteMemory || signatureMoment) && (
+        <ScrapbookSection className="bg-white/40 border-y border-parchment-dark/20">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+            {favoriteMemory && (
+              <div className="space-y-8">
+                <Heading level={2} className="text-3xl flex items-center gap-3">
+                  <Heart size={24} className="text-red-400" /> Favorite <span className="italic">Memory</span>
+                </Heading>
+                <Polaroid
+                  src={favoriteMemory.url}
+                  handwrittenCaption="One for the books"
+                  className="w-full max-w-md mx-auto md:mx-0"
+                />
+              </div>
+            )}
+            {signatureMoment && (
+              <div className="space-y-8">
+                <Heading level={2} className="text-3xl flex items-center gap-3">
+                  <Star size={24} className="text-champagne-gold" /> Signature <span className="italic">Moment</span>
+                </Heading>
+                <div className="relative">
+                  <Polaroid
+                    src={signatureMoment.url}
+                    rotation={3}
+                    className="w-full max-w-md mx-auto md:mx-0"
+                  />
+                  {senior.signatureMomentText && (
+                    <div className="mt-8 p-6 bg-parchment-muted/30 border border-dashed border-parchment-dark rounded-md">
+                       <p className="font-serif italic text-charcoal-muted leading-relaxed">
+                          {senior.signatureMomentText}
+                       </p>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
+          </div>
+        </ScrapbookSection>
+      )}
 
-            <div className="md:col-span-7 lg:col-span-8 flex flex-col justify-center">
-              <Badge variant="outline" className="w-fit mb-4">{senior.major}</Badge>
-              <Heading level={1} className="md:text-7xl">{senior.name}</Heading>
+      {/* The Journey Timeline */}
+      <ScrapbookSection>
+        <div className="text-center mb-12">
+          <Heading level={2} className="text-5xl mb-4">The <span className="italic">Journey</span></Heading>
+          <p className="text-charcoal-muted font-serif italic text-lg">A chronological walk through shared moments.</p>
+        </div>
+        <MemoryTimeline entries={timelineEntries} />
+      </ScrapbookSection>
 
-              <div className="mt-8 relative">
-                <Quote className="absolute -left-8 -top-4 w-12 h-12 text-champagne-gold/20" />
-                <p className="text-2xl md:text-3xl font-serif italic text-heritage-navy leading-relaxed">
-                   &quot;{senior.quote}&quot;
-                </p>
-              </div>
-
-              <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-8">
+      {/* Messages Fragment */}
+      {(senior.messagesReceived.length > 0 || senior.messagesSent.length > 0) && (
+        <ScrapbookSection className="bg-heritage-navy text-white">
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-24">
+              {senior.messagesReceived.length > 0 && (
                 <div>
-                  <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-champagne-gold mb-4">Achievements</h3>
-                  <ul className="space-y-3">
-                    {senior.achievements.map((achievement, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-heritage-navy mt-1.5" />
-                        <span className="text-sm text-charcoal">{achievement}</span>
-                      </li>
+                  <Heading level={2} className="text-white text-3xl mb-12 flex items-center gap-3">
+                    <MessageSquare size={20} className="text-champagne-gold" /> Messages <span className="italic">About Them</span>
+                  </Heading>
+                  <div className="space-y-8">
+                    {senior.messagesReceived.slice(0, 3).map((msg: any, i: number) => (
+                      <HandwrittenNote
+                        key={msg.id}
+                        content={msg.content}
+                        from={msg.fromName}
+                        rotation={i % 2 === 0 ? -1 : 1}
+                        color={['white', 'yellow', 'blue', 'pink'][i % 4] as any}
+                        className="text-heritage-navy"
+                      />
                     ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Container>
-      </Section>
-
-      <Section variant="muted">
-        <Container>
-          <div className="flex items-end justify-between mb-12 border-b border-charcoal-muted/10 pb-6">
-            <div>
-              <h2 className="font-serif text-3xl">Shared Memories</h2>
-              <p className="text-charcoal-muted text-sm mt-1">Moments shared with the Class of 2025</p>
-            </div>
-            <Link href="/gallery" className="text-xs font-bold uppercase tracking-widest text-heritage-navy hover:text-champagne-gold transition-colors">
-              View All Gallery &rarr;
-            </Link>
-          </div>
-
-          {memories.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {memories.map((memory) => (
-                <Link key={memory.id} href={`/gallery/${memory.id}`}>
-                  <div className="bg-white p-2 rounded-md shadow-sm group cursor-pointer hover:shadow-md transition-all">
-                    <div className="aspect-video rounded-sm bg-parchment-muted overflow-hidden relative">
-                       <div className="absolute inset-0 bg-heritage-navy/0 group-hover:bg-heritage-navy/10 transition-colors" />
-                    </div>
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <Badge variant="outline" className="text-[10px] py-0">{memory.category}</Badge>
-                        <span className="text-[10px] font-mono text-charcoal-muted">{memory.date}</span>
-                      </div>
-                      <h4 className="font-serif text-lg text-heritage-navy group-hover:text-champagne-gold transition-colors">
-                        {memory.title}
-                      </h4>
-                    </div>
                   </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="py-20 text-center border-2 border-dashed border-charcoal-muted/20 rounded-md">
-               <p className="text-charcoal-muted italic">No shared memories captured yet.</p>
-            </div>
-          )}
-        </Container>
-      </Section>
+                </div>
+              )}
+              {senior.messagesSent.length > 0 && (
+                <div>
+                  <Heading level={2} className="text-white text-3xl mb-12 flex items-center gap-3">
+                    <MessageSquare size={20} className="text-champagne-gold" /> Written <span className="italic">By Them</span>
+                  </Heading>
+                  <div className="space-y-8 opacity-90">
+                    {senior.messagesSent.slice(0, 3).map((msg: any, i: number) => (
+                      <HandwrittenNote
+                        key={msg.id}
+                        content={msg.content}
+                        from="Sent to a friend"
+                        rotation={i % 2 === 0 ? 1 : -1}
+                        className="text-heritage-navy"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+           </div>
+        </ScrapbookSection>
+      )}
+
+      {/* Discovery Layer */}
+      <ScrapbookSection>
+        <FriendshipCluster
+          friends={senior.relatedPeople.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            image: p.image,
+            slug: p.slug
+          }))}
+        />
+
+        <div className="mt-24 text-center border-t border-parchment-dark/30 pt-24">
+           <Heading level={2} className="text-3xl mb-8">Want to see more <span className="italic">memories?</span></Heading>
+           <Link
+            href={`/gallery?seniorId=${senior.id}`}
+            className="inline-flex items-center gap-3 bg-heritage-navy text-white px-12 py-5 rounded-full font-bold uppercase tracking-[0.2em] text-sm shadow-xl hover:shadow-2xl hover:scale-105 transition-all"
+           >
+             Open Complete Archive <ArrowRight size={18} />
+           </Link>
+        </div>
+      </ScrapbookSection>
     </div>
-  );
+  )
 }

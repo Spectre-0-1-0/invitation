@@ -60,3 +60,16 @@ This build order is designed to deliver a high-quality, usable product as quickl
     - Tribute page provides a "wow" emotional peak.
     - Lighthouse performance score > 90.
     - Site is fully usable via keyboard and screen readers.
+
+## Phase 6: Upload & Media Pipeline (Sprint 4)
+- **Goal:** Scalable media ingestion and processing.
+- **Deliverables:**
+    - Supabase + Prisma database infrastructure.
+    - Event-centric Upload Dashboard (/admin/upload).
+    - Asynchronous processing with Inngest (Thumbnails, ZIPs).
+    - Bulk operations and ingestion tracking dashboard.
+- **Dependencies:** Phase 5.
+- **Acceptance Criteria:**
+    - High-volume uploads (hundreds of files) work without blocking UI.
+    - ZIP extraction preserves folder structure.
+    - Media is automatically categorized and processed.

@@ -15,8 +15,8 @@ export function Navbar() {
 
   const navItems = [
     { name: "Seniors", path: "/seniors" },
+    { name: "Events", path: "/timeline" },
     { name: "Gallery", path: "/gallery" },
-    { name: "Timeline", path: "/timeline" },
     { name: "Messages", path: "/messages" },
   ];
 
@@ -24,6 +24,7 @@ export function Navbar() {
     { name: "Memes", path: "/memes" },
     { name: "Achievements", path: "/achievements" },
     { name: "Videos", path: "/videos" },
+    { name: "Admin", path: "/admin" },
   ];
 
   useEffect(() => {

@@ -1,61 +1,59 @@
-export interface Senior {
-  id: string;
-  name: string;
-  nickname?: string;
-  major: string;
-  branch?: string;
-  graduationYear: number;
-  quote: string;
-  image: string;
-  achievements: string[];
-  memoryHighlights?: string[];
-  socialLinks?: {
-    instagram?: string;
-    linkedin?: string;
-    twitter?: string;
-  };
+import {
+  Batch as PrismaBatch,
+  Event as PrismaEvent,
+  Person as PrismaPerson,
+  Media as PrismaMedia,
+  Achievement as PrismaAchievement,
+  Message as PrismaMessage,
+  Meme as PrismaMeme
+} from '@prisma/client'
+
+export type Batch = PrismaBatch & {
+  events?: Event[]
+  people?: Person[]
 }
 
-export interface Memory {
-  id: string;
-  type: 'photo' | 'video' | 'text';
-  category: 'candid' | 'event' | 'milestone' | 'farewell' | 'trip' | 'classroom';
-  title: string;
-  description: string;
-  location?: string;
-  peopleInvolved?: string[]; // IDs of seniors
-  url: string;
-  thumbnail?: string;
-  date: string;
-  tags: string[];
-  featured: boolean;
+export type Event = PrismaEvent & {
+  batch?: Batch
+  media?: Media[]
+  messages?: Message[]
+  participants?: Person[]
 }
 
-export interface TimelineEvent {
-  id: string;
-  period: string;
-  milestone: string;
-  description: string;
-  importance: 'major' | 'minor';
-  photoUrl?: string;
-  relatedMemoryIds?: string[];
+export type Person = PrismaPerson & {
+  batch?: Batch
+  achievements?: Achievement[]
+  taggedInMedia?: Media[]
+  eventsParticipated?: Event[]
+  messagesSent?: Message[]
+  messagesReceived?: Message[]
 }
 
-export interface Message {
-  id: string;
-  from: string;
-  targetId?: string; // ID of senior
-  content: string;
-  category: 'thank-you' | 'funny' | 'appreciation' | 'farewell';
-  relationship?: string;
-  timestamp: string;
+export type Media = PrismaMedia & {
+  event?: Event
+  participants?: Person[]
 }
 
-export interface Meme {
-  id: string;
-  url: string;
-  caption?: string;
-  originContext: string;
+export type Achievement = PrismaAchievement & {
+  person?: Person
+}
+
+export type Message = PrismaMessage & {
+  fromPerson?: Person
+  targetPerson?: Person
+  event?: Event
+}
+
+export type Meme = PrismaMeme
+
+// Compatibility types for existing components
+export interface Senior extends Person {
+  memoryHighlights?: string[]
+}
+export interface Memory extends Media {}
+export interface TimelineEvent extends Event {
+  period: string
+  milestone: string
 }
 
 export interface GalleryAlbum {
@@ -64,13 +62,4 @@ export interface GalleryAlbum {
   description?: string;
   coverImage: string;
   memoryIds: string[];
-}
-
-export interface Achievement {
-  id: string;
-  title: string;
-  recipientId: string;
-  date: string;
-  category: 'academic' | 'placement' | 'research' | 'club' | 'sports';
-  description?: string;
 }

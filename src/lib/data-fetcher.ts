@@ -1,46 +1,188 @@
-import { Senior, Memory, TimelineEvent, Message, Meme, GalleryAlbum, Achievement } from '@/types/archive';
-import seniorsData from '@/data/seniors.json';
-import memoriesData from '@/data/memories.json';
-import timelineData from '@/data/timeline.json';
-import messagesData from '@/data/messages.json';
-import memesData from '@/data/memes.json';
-import albumsData from '@/data/albums.json';
-import achievementsData from '@/data/achievements.json';
+import { prisma } from './prisma/client'
+import {
+  Senior,
+  Memory,
+  TimelineEvent,
+  Message,
+  Meme,
+  GalleryAlbum,
+  Achievement,
+  Batch,
+  Event,
+  Person
+} from '@/types/archive'
+
+export async function getBatches(): Promise<Batch[]> {
+  return prisma.batch.findMany({
+    include: { events: true }
+  }) as unknown as Batch[]
+}
 
 export async function getSeniors(): Promise<Senior[]> {
-  return seniorsData as Senior[];
+  const people = await prisma.person.findMany({
+    include: { achievements: true }
+  })
+  return people.map(p => ({
+    ...p,
+    memoryHighlights: []
+  })) as unknown as Senior[]
 }
 
 export async function getSeniorBySlug(slug: string): Promise<Senior | undefined> {
-  const seniors = await getSeniors();
-  return seniors.find((s) => s.id === slug);
+  const senior = await prisma.person.findUnique({
+    where: { slug },
+    include: { achievements: true }
+  })
+  if (!senior) return undefined
+  return {
+    ...senior,
+    memoryHighlights: []
+  } as unknown as Senior
 }
 
 export async function getMemories(): Promise<Memory[]> {
-  return memoriesData as Memory[];
+  const media = await prisma.media.findMany({
+    include: { participants: true, event: true },
+    orderBy: { date: 'desc' }
+  })
+  return media as unknown as Memory[]
 }
 
 export async function getMemoriesBySenior(seniorId: string): Promise<Memory[]> {
-  const memories = await getMemories();
-  return memories.filter((m) => m.peopleInvolved?.includes(seniorId));
+  const media = await prisma.media.findMany({
+    where: {
+      participants: {
+        some: { id: seniorId }
+      }
+    },
+    include: { participants: true, event: true }
+  })
+  return media as unknown as Memory[]
 }
 
 export async function getTimeline(): Promise<TimelineEvent[]> {
-  return timelineData as TimelineEvent[];
+  const events = await prisma.event.findMany({
+    where: { featured: true },
+    orderBy: { startDate: 'asc' }
+  })
+  return events.map(e => ({
+    ...e,
+    period: e.academicYear || '',
+    milestone: e.title
+  })) as unknown as TimelineEvent[]
 }
 
 export async function getMessages(): Promise<Message[]> {
-  return messagesData as Message[];
+  const messages = await prisma.message.findMany({
+    orderBy: { timestamp: 'desc' },
+    include: { fromPerson: true, targetPerson: true, event: true }
+  })
+  return messages as unknown as Message[]
 }
 
 export async function getMemes(): Promise<Meme[]> {
-  return memesData as Meme[];
+  return prisma.meme.findMany() as unknown as Meme[]
 }
 
 export async function getAlbums(): Promise<GalleryAlbum[]> {
-  return albumsData as GalleryAlbum[];
+  const events = await prisma.event.findMany({
+    include: { media: { select: { id: true } } }
+  })
+  return events.map(e => ({
+    id: e.id,
+    title: e.title,
+    description: e.description || '',
+    coverImage: '',
+    memoryIds: e.media.map(m => m.id)
+  })) as unknown as GalleryAlbum[]
 }
 
 export async function getAchievements(): Promise<Achievement[]> {
-  return achievementsData as Achievement[];
+  return prisma.achievement.findMany() as unknown as Achievement[]
+}
+
+export async function getEventBySlug(slug: string): Promise<Event | undefined> {
+  const event = await prisma.event.findUnique({
+    where: { slug },
+    include: {
+      media: {
+        orderBy: [{ featured: 'desc' }, { importance: 'desc' }, { createdAt: 'desc' }]
+      },
+      messages: {
+        include: { fromPerson: true }
+      },
+      participants: true,
+      batch: true
+    }
+  })
+  return (event || undefined) as unknown as Event
+}
+
+export async function getEvents(): Promise<Event[]> {
+  return prisma.event.findMany({
+    include: { batch: true },
+    orderBy: { startDate: 'desc' }
+  }) as unknown as Event[]
+}
+
+export async function getSeniorProfile(slug: string): Promise<Person | undefined> {
+  const senior = await prisma.person.findUnique({
+    where: { slug },
+    include: {
+      batch: true,
+      achievements: true,
+      eventsParticipated: {
+        orderBy: { startDate: 'asc' },
+        include: {
+          media: {
+            where: { featured: true },
+            take: 3
+          }
+        }
+      },
+      taggedInMedia: {
+        orderBy: { date: 'desc' },
+        include: { event: true },
+        take: 20
+      },
+      messagesSent: {
+        include: { targetPerson: true, event: true },
+        orderBy: { createdAt: 'desc' }
+      },
+      messagesReceived: {
+        include: { fromPerson: true, event: true },
+        orderBy: { createdAt: 'desc' }
+      }
+    }
+  })
+
+  if (!senior) return undefined
+
+  // Friendship Graph Logic: Find people often remembered together
+  const eventIds = senior.eventsParticipated.map(e => e.id)
+  const mediaIds = senior.taggedInMedia.map(m => m.id)
+
+  const relatedPeople = await prisma.person.findMany({
+    where: {
+      id: { not: senior.id },
+      OR: [
+        { eventsParticipated: { some: { id: { in: eventIds } } } },
+        { taggedInMedia: { some: { id: { in: mediaIds } } } }
+      ]
+    },
+    take: 5
+  })
+
+  return {
+    ...senior,
+    relatedPeople: relatedPeople
+  } as any
+}
+
+export async function getMediaById(id: string): Promise<Memory | undefined> {
+  const media = await prisma.media.findUnique({
+    where: { id },
+    include: { event: true, participants: true }
+  })
+  return (media || undefined) as unknown as Memory
 }
