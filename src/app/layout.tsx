@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import "@/styles/globals.css";
-import { Navbar } from "@/components/shared/Navbar";
-import { Footer } from "@/components/shared/Footer";
-import { PageTransition } from "@/components/animations/PageTransition";
+import { MainLayout } from "@/components/layout/MainLayout";
 import React from "react";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -27,11 +25,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.variable} ${playfair.variable} ${jetbrains.variable} antialiased font-sans`}>
         <div className="fixed inset-0 pointer-events-none z-[9999] opacity-[0.03] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
-        <Navbar />
-        <PageTransition>
-          <main>{children}</main>
-        </PageTransition>
-        <Footer />
+        <MainLayout>{children}</MainLayout>
       </body>
     </html>
   );
