@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { SeniorSpotlight } from "@/components/sections/SeniorSpotlight";
+import { RandomMemory } from "@/components/sections/RandomMemory";
 import Link from "next/link";
 import { Camera, Users, MessageCircle, Calendar, ArrowRight, Heart } from "lucide-react";
 import { getMemories, getSeniors } from "@/lib/data-fetcher";
@@ -50,8 +51,8 @@ export default async function Home() {
     <div className="flex flex-col">
       {/* Immersive Hero Section */}
       <Section className="min-h-screen flex items-center relative overflow-hidden pt-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#D4AF3710_0%%,_transparent_40%%%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_#1A2B4808_0%%,_transparent_40%%%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#D4AF3710_0%,_transparent_40%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_#1A2B4808_0%,_transparent_40%)]" />
 
         <Container className="relative z-10">
           <div className="max-w-4xl mx-auto text-center">
@@ -89,17 +90,25 @@ export default async function Home() {
             </FadeIn>
           </div>
         </Container>
+      </Section>
 
-        <FadeIn delay={1.2} className="absolute bottom-10 left-1/2 -translate-x-1/2 hidden md:block">
-           <div className="flex flex-col items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-charcoal-muted/40">
-              <span>Scroll to Begin</span>
-              <div className="w-px h-12 bg-gradient-to-b from-charcoal-muted/40 to-transparent" />
+      {/* Random Memory / Rediscovery Section */}
+      <Section className="bg-parchment-base border-y border-parchment-dark/20 overflow-hidden py-32">
+        <Container>
+           <div className="max-w-xl mx-auto text-center mb-16">
+              <FadeIn>
+                <Heading level={2} className="text-4xl md:text-5xl mb-6">Lost & <span className="italic font-light">Found</span></Heading>
+                <p className="text-charcoal-muted font-serif italic">Let the archive surprise you. A single click, a forgotten day, a lasting smile.</p>
+              </FadeIn>
            </div>
-        </FadeIn>
+           <FadeIn delay={0.2}>
+              <RandomMemory memories={memories} />
+           </FadeIn>
+        </Container>
       </Section>
 
       {/* Senior Spotlight Section */}
-      <Section className="bg-white border-y border-parchment-muted overflow-hidden">
+      <Section className="bg-white border-b border-parchment-muted overflow-hidden">
         <Container>
            <FadeIn>
               <div className="mb-16">

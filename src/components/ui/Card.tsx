@@ -16,7 +16,7 @@ export function Card({ children, className, variant = "default", ...props }: Car
   return (
     <div
       className={cn(
-        "overflow-hidden",
+        "overflow-hidden focus-within:ring-2 focus-within:ring-champagne-gold focus-within:ring-offset-2",
         variants[variant],
         className
       )}

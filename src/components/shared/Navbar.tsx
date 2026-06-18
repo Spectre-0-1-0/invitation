@@ -48,14 +48,19 @@ export function Navbar() {
           ? "bg-parchment-base/95 backdrop-blur-md border-b border-parchment-dark/30 shadow-sm py-3"
           : "bg-transparent py-6"
       )}
+      role="banner"
     >
       <Container className="flex items-center justify-between">
-        <Link href="/" className="font-serif text-2xl font-bold text-heritage-navy tracking-tighter group">
+        <Link
+          href="/"
+          className="font-serif text-2xl font-bold text-heritage-navy tracking-tighter group"
+          aria-label="College Memory Archive Home"
+        >
           Archive <span className="text-champagne-gold group-hover:text-burnt-sienna transition-colors">2025</span>
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex gap-10 items-center">
+        <nav className="hidden md:flex gap-10 items-center" aria-label="Main navigation">
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -66,6 +71,7 @@ export function Navbar() {
                   ? "text-heritage-navy after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-champagne-gold"
                   : "text-charcoal-muted"
               )}
+              aria-current={pathname.startsWith(item.path) ? "page" : undefined}
             >
               {item.name}
             </Link>
@@ -74,7 +80,10 @@ export function Navbar() {
           <div className="relative">
             <button
               onMouseEnter={() => setShowMore(true)}
+              onClick={() => setShowMore(!showMore)}
               className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.2em] text-charcoal-muted hover:text-heritage-navy transition-colors"
+              aria-expanded={showMore}
+              aria-haspopup="true"
             >
               More <ChevronDown size={12} className={cn("transition-transform duration-300", showMore && "rotate-180")} />
             </button>
@@ -82,12 +91,14 @@ export function Navbar() {
               <div
                 onMouseLeave={() => setShowMore(false)}
                 className="absolute top-full right-0 mt-4 w-52 bg-white border border-parchment-dark shadow-2xl rounded-md overflow-hidden py-3 animate-in fade-in slide-in-from-top-2 duration-300"
+                role="menu"
               >
                 {moreItems.map(item => (
                   <Link
                     key={item.path}
                     href={item.path}
                     className="block px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-charcoal-muted hover:bg-parchment-muted hover:text-heritage-navy transition-colors"
+                    role="menuitem"
                   >
                     {item.name}
                   </Link>
@@ -108,9 +119,10 @@ export function Navbar() {
         <button
           className="md:hidden p-2 text-heritage-navy focus:outline-none"
           onClick={() => setIsOpen(!isOpen)}
-          aria-label="Toggle Menu"
+          aria-label={isOpen ? "Close Menu" : "Open Menu"}
+          aria-expanded={isOpen}
         >
-          {isOpen ? <X size={32} strokeWidth={1.5} /> : <Menu size={32} strokeWidth={1.5} />}
+          {isOpen ? <X size={32} strokeWidth={1.5} aria-hidden="true" /> : <Menu size={32} strokeWidth={1.5} aria-hidden="true" />}
         </button>
       </Container>
 
@@ -120,8 +132,9 @@ export function Navbar() {
           "fixed inset-0 top-[70px] bg-parchment-base transition-all duration-500 md:hidden z-40 overflow-y-auto",
           isOpen ? "opacity-100 pointer-events-auto translate-y-0" : "opacity-0 pointer-events-none translate-y-4"
         )}
+        aria-hidden={!isOpen}
       >
-        <nav className="flex flex-col p-8 gap-2">
+        <nav className="flex flex-col p-8 gap-2" aria-label="Mobile navigation">
            <span className="text-[10px] font-mono uppercase tracking-[0.4em] text-champagne-gold mb-4 block">Main Sections</span>
           {navItems.map((item) => (
             <Link
@@ -131,6 +144,7 @@ export function Navbar() {
                 "text-3xl font-serif py-4 border-b border-parchment-dark/30",
                 pathname.startsWith(item.path) ? "text-heritage-navy italic" : "text-charcoal-muted"
               )}
+              aria-current={pathname.startsWith(item.path) ? "page" : undefined}
             >
               {item.name}
             </Link>

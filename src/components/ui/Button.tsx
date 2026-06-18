@@ -9,10 +9,10 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", ...props }, ref) => {
     const variants = {
-      primary: "bg-heritage-navy text-white hover:bg-opacity-90",
-      secondary: "bg-champagne-gold text-heritage-navy hover:bg-opacity-90",
-      outline: "border-2 border-heritage-navy text-heritage-navy hover:bg-heritage-navy hover:text-white",
-      ghost: "text-heritage-navy hover:bg-parchment-muted",
+      primary: "bg-heritage-navy text-white hover:bg-opacity-90 focus-visible:ring-offset-2 focus-visible:ring-2 focus-visible:ring-heritage-navy",
+      secondary: "bg-champagne-gold text-heritage-navy hover:bg-opacity-90 focus-visible:ring-offset-2 focus-visible:ring-2 focus-visible:ring-champagne-gold",
+      outline: "border-2 border-heritage-navy text-heritage-navy hover:bg-heritage-navy hover:text-white focus-visible:ring-offset-2 focus-visible:ring-2 focus-visible:ring-heritage-navy",
+      ghost: "text-heritage-navy hover:bg-parchment-muted focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-heritage-navy",
     };
 
     const sizes = {
@@ -25,7 +25,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center rounded-md font-medium transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none",
+          "inline-flex items-center justify-center rounded-md font-medium transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none focus:outline-none",
           variants[variant],
           sizes[size],
           className
