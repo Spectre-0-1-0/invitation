@@ -1,0 +1,222 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?  @db.Text
+  date          DateTime // Primary display date
+  startDate     DateTime?
+  endDate       DateTime?
+  academicYear  String   // e.g., "2021-22"
+  category      String   // academic, social, monumental, transition
+  location      String?
+  organizers    String?  // comma-separated or JSON
+
+  tags          Tag[]
+  memories      Memory[]
+  media         MediaFile[]
+  people        Person[] @relation("EventParticipants")
+  achievements  Achievement[]
+  documents     Document[]
+
+  // Scrapbook Rendering Metadata
+  importance    Int      @default(1) // 1-5
+  chapterId     String?
+  chapterCover  String?  // URL of the specific image to use as chapter cover
+  chapterQuote  String?  @db.Text
+  chapterMood   String?  // nostalgic, energetic, reflective, chaos
+  featured      Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([date])
+  @@index([category])
+  @@index([academicYear])
+}
+
+model Person {
+  id             String   @id @default(cuid())
+  name           String
+  nickname       String?
+  major          String
+  branch         String?
+  graduationYear Int      @default(2025)
+  batch          String?  // e.g., "Batch A"
+  status         String   @default("Senior") // Senior, Junior, Alumni, Faculty
+
+  bio            String?  @db.Text
+  favoriteMemory String?  @db.Text
+  quote          String?  @db.Text
+  image          String?  // Profile photo URL
+  socialLinks    Json?    // { instagram, linkedin, twitter, portfolio }
+  contactInfo    String?  // Optional email or phone
+
+  events         Event[]  @relation("EventParticipants")
+  memories       Memory[] @relation("PersonMemories")
+  mediaTagged    MediaFile[] @relation("MediaTags")
+  messagesRecv   Message[] @relation("MessageReceiver")
+  messagesSent   Message[] @relation("MessageSender")
+  achievements   Achievement[]
+
+  // Relationships
+  relationships  Relationship[] @relation("PersonSource")
+  relatedBy      Relationship[] @relation("PersonTarget")
+
+  // Scrapbook Rendering Metadata
+  handwritingPersona String?  // ID of handwriting persona (neat, chaotic, etc)
+  highlightPhotoUrl  String?
+  signatureMoment    String?  @db.Text
+  personalityNotes   String?  @db.Text
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([name])
+  @@index([major])
+  @@index([branch])
+  @@index([batch])
+}
+
+model Relationship {
+  id          String   @id @default(cuid())
+  type        String   // friend, roommate, club-member, teammate, class-rep
+
+  personId    String
+  person      Person   @relation("PersonSource", fields: [personId], references: [id])
+  targetId    String
+  target      Person   @relation("PersonTarget", fields: [targetId], references: [id])
+
+  context     String?  // e.g., "Coding Club", "Room 302"
+
+  createdAt   DateTime @default(now())
+
+  @@unique([personId, targetId, type])
+}
+
+model Memory {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  type        String   // photo, video, text
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id])
+
+  people      Person[] @relation("PersonMemories")
+  media       MediaFile[]
+  tags        Tag[]
+
+  // Scrapbook Metadata
+  featured    Boolean  @default(false)
+  importance  Int      @default(1)
+  storyRef    String?  // Reference to link narrative pieces
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([type])
+}
+
+model MediaFile {
+  id          String   @id @default(cuid())
+  url         String
+  thumbnail   String?
+  type        String   // image, video, document
+  mimeType    String
+  size        Int
+  width       Int?
+  height      Int?
+  duration    Float?   // for video
+
+  eventId     String?
+  event       Event?   @relation(fields: [eventId], references: [id])
+  memoryId    String?
+  memory      Memory?  @relation(fields: [memoryId], references: [id])
+
+  taggedPeople Person[] @relation("MediaTags")
+  uploadId    String?
+  upload      Upload?  @relation(fields: [uploadId], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@index([eventId])
+  @@index([memoryId])
+  @@index([type])
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  content     String   @db.Text
+  category    String   // thank-you, funny, appreciation, farewell
+
+  receiverId  String?
+  receiver    Person?  @relation("MessageReceiver", fields: [receiverId], references: [id])
+  senderId    String?
+  sender      Person?  @relation("MessageSender", fields: [senderId], references: [id])
+  senderName  String?  // For guest messages
+
+  // Scrapbook Metadata
+  handwriting String?  // ID of handwriting persona
+
+  createdAt   DateTime @default(now())
+
+  @@index([receiverId])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  date        DateTime
+  category    String   // academic, placement, club, sports
+
+  personId    String
+  person      Person   @relation(fields: [personId], references: [id])
+  eventId     String?
+  event       Event?   @relation(fields: [eventId], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@index([personId])
+  @@index([eventId])
+  @@index([category])
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  url         String
+  type        String   // pdf, doc, etc
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id])
+
+  createdAt   DateTime @default(now())
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  events      Event[]
+  memories    Memory[]
+}
+
+model Upload {
+  id          String   @id @default(cuid())
+  batchName   String?
+  source      String   // zip, folder, manual
+  status      String   // pending, processing, completed, failed
+  files       MediaFile[]
+
+  createdAt   DateTime @default(now())
+}
