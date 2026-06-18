@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Batch {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  events      Event[]
+  people      Person[]
+}
+
+model Event {
+  id                String    @id @default(cuid())
+  slug              String    @unique
+  title             String
+  description       String?
+  date              DateTime?
+  location          String?
+  chapterQuote      String?
+  chapterMood       String?
+  chapterColorTheme String?
+  featured          Boolean   @default(false)
+  isArchived        Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  batchId           String
+  batch             Batch     @relation(fields: [batchId], references: [id])
+
+  coverMediaId      String?
+  media             Media[]   @relation("EventMedia")
+
+  participants      Person[]  @relation("PersonEvents")
+  messages          Message[]
+}
+
+model Person {
+  id                     String    @id @default(cuid())
+  slug                   String    @unique
+  name                   String
+  nickname               String?
+  major                  String?
+  graduationYear         Int?
+  yearbookQuote          String?
+  image                  String?
+  signatureMomentMediaId String?
+  signatureMomentText    String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  batchId                String
+  batch                  Batch     @relation(fields: [batchId], references: [id])
+
+  events                 Event[]   @relation("PersonEvents")
+  taggedMedia            Media[]   @relation("PersonMedia")
+  messages               Message[]
+}
+
+enum MediaType {
+  PHOTO
+  VIDEO
+  DOCUMENT
+  POSTER
+  MEME
+  SCREENSHOT
+}
+
+model Media {
+  id          String    @id @default(cuid())
+  url         String
+  thumbnailUrl String?
+  type        MediaType @default(PHOTO)
+  category    String?
+  title       String?
+  description String?
+  featured    Boolean   @default(false)
+  isHiddenGem Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  eventId     String
+  event       Event     @relation("EventMedia", fields: [eventId], references: [id])
+
+  taggedPeople Person[] @relation("PersonMedia")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  from      String
+  content   String
+  category  String?
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  eventId   String?
+  event     Event?   @relation(fields: [eventId], references: [id])
+
+  personId  String?
+  person    Person?  @relation(fields: [personId], references: [id])
+}
