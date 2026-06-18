@@ -5,12 +5,14 @@ import { inngest } from '@/inngest/client';
 import crypto from 'crypto';
 
 export async function POST(request: Request) {
+  let currentUploadId: string | null = null;
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const eventId = formData.get('eventId') as string;
     const uploadId = formData.get('uploadId') as string;
     const isZip = formData.get('isZip') === 'true';
+    currentUploadId = uploadId;
 
     if (!file || !eventId) {
       return NextResponse.json({ error: 'Missing file or eventId' }, { status: 400 });
@@ -25,6 +27,12 @@ export async function POST(request: Request) {
     });
 
     if (existing && !isZip) {
+      if (uploadId) {
+        await prisma.uploadSession.update({
+          where: { id: uploadId },
+          data: { successCount: { increment: 1 } }
+        });
+      }
       return NextResponse.json({
         status: 'duplicate',
         url: existing.url,
@@ -58,7 +66,7 @@ export async function POST(request: Request) {
           originalName: file.name,
           mimeType,
           eventId,
-          uploadId: uploadId || null,
+          uploadSessionId: uploadId || null,
           status: 'QUEUED',
           checksum
         }
@@ -75,6 +83,12 @@ export async function POST(request: Request) {
     }
   } catch (error: any) {
     console.error('File upload failed:', error);
+    if (currentUploadId) {
+        await prisma.uploadSession.update({
+          where: { id: currentUploadId },
+          data: { failureCount: { increment: 1 } }
+        });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

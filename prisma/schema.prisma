@@ -41,7 +41,7 @@ model Event {
 
   participants      Person[]  @relation("PersonEvents")
   messages          Message[]
-  uploads           Upload[]
+  uploadSessions    UploadSession[]
 }
 
 model Person {
@@ -82,12 +82,15 @@ enum ProcessingStatus {
   FAILED
 }
 
-model Upload {
+model UploadSession {
   id            String           @id @default(cuid())
   status        ProcessingStatus @default(QUEUED)
-  totalFiles    Int              @default(0)
-  processedFiles Int             @default(0)
-  failedFiles    Int             @default(0)
+  uploadedBy    String?
+  fileCount     Int              @default(0)
+  successCount  Int              @default(0)
+  failureCount  Int              @default(0)
+  startedAt     DateTime         @default(now())
+  completedAt   DateTime?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
@@ -124,8 +127,8 @@ model Media {
   eventId      String
   event        Event            @relation("EventMedia", fields: [eventId], references: [id])
 
-  uploadId     String?
-  upload       Upload?          @relation(fields: [uploadId], references: [id])
+  uploadSessionId String?
+  uploadSession   UploadSession? @relation(fields: [uploadSessionId], references: [id])
 
   taggedPeople Person[]         @relation("PersonMedia")
 }
@@ -145,6 +148,3 @@ model Message {
   personId  String?
   person    Person?  @relation(fields: [personId], references: [id])
 }
-
-// Add checksum to Media for duplication prevention
-// Note: In a real migration we'd add this, here we update the schema file.

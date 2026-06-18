@@ -28,7 +28,6 @@ export const processMediaUpload = inngest.createFunction(
     });
 
     try {
-      // 1. Download file from Supabase
       const fileData = await step.run("download-file", async () => {
         const urlParts = media.url.split("/storage/v1/object/public/");
         if (urlParts.length < 2) throw new Error("Invalid Supabase URL");
@@ -44,7 +43,6 @@ export const processMediaUpload = inngest.createFunction(
 
       const buffer = Buffer.from(fileData.buffer, 'base64');
 
-      // 2. Process based on type
       if (media.type === "PHOTO") {
         const metadataResult = await step.run("process-image", async () => {
           const image = sharp(buffer);
@@ -85,7 +83,6 @@ export const processMediaUpload = inngest.createFunction(
           });
         });
       } else {
-         // Handle other types
          await step.run("mark-completed", async () => {
            await prisma.media.update({
              where: { id: mediaId },
@@ -94,23 +91,22 @@ export const processMediaUpload = inngest.createFunction(
          });
       }
 
-      // Update Upload progress if linked
-      if (media.uploadId) {
-        await step.run("update-upload-progress", async () => {
-          const upload = await prisma.upload.findUnique({
-            where: { id: media.uploadId! },
-            include: { _count: { select: { media: true } } }
+      if (media.uploadSessionId) {
+        await step.run("update-session-progress", async () => {
+          const session = await prisma.uploadSession.findUnique({
+            where: { id: media.uploadSessionId! }
           });
 
-          if (upload) {
-            const newProcessedCount = upload.processedFiles + 1;
-            const isFinished = newProcessedCount >= upload.totalFiles;
+          if (session) {
+            const newSuccessCount = session.successCount + 1;
+            const isFinished = newSuccessCount + session.failureCount >= session.fileCount;
 
-            await prisma.upload.update({
-              where: { id: media.uploadId! },
+            await prisma.uploadSession.update({
+              where: { id: media.uploadSessionId! },
               data: {
-                processedFiles: newProcessedCount,
-                status: isFinished ? "COMPLETED" : "PROCESSING"
+                successCount: newSuccessCount,
+                status: isFinished ? "COMPLETED" : "PROCESSING",
+                completedAt: isFinished ? new Date() : null
               }
             });
           }
@@ -123,14 +119,25 @@ export const processMediaUpload = inngest.createFunction(
           where: { id: mediaId },
           data: { status: "FAILED", errorMessage: err.message },
         });
-        if (media.uploadId) {
-          await prisma.upload.update({
-            where: { id: media.uploadId! },
-            data: { failedFiles: { increment: 1 } }
+        if (media.uploadSessionId) {
+          const session = await prisma.uploadSession.findUnique({
+            where: { id: media.uploadSessionId! }
           });
+          if (session) {
+            const newFailureCount = session.failureCount + 1;
+            const isFinished = session.successCount + newFailureCount >= session.fileCount;
+            await prisma.uploadSession.update({
+              where: { id: media.uploadSessionId! },
+              data: {
+                failureCount: newFailureCount,
+                status: isFinished ? "COMPLETED" : "PROCESSING",
+                completedAt: isFinished ? new Date() : null
+              }
+            });
+          }
         }
       });
-      throw err; // Re-throw for Inngest retry logic
+      throw err;
     }
   }
 );
@@ -154,13 +161,12 @@ export const processZipExtraction = inngest.createFunction(
 
     const zip = new AdmZip(Buffer.from(zipData.buffer, 'base64'));
     const zipEntries = zip.getEntries();
-
     const validEntries = zipEntries.filter(entry => !entry.isDirectory && !entry.entryName.startsWith('__MACOSX'));
 
     await step.run("update-total-files", async () => {
-      await prisma.upload.update({
+      await prisma.uploadSession.update({
         where: { id: uploadId },
-        data: { totalFiles: validEntries.length }
+        data: { fileCount: validEntries.length }
       });
     });
 
@@ -187,7 +193,7 @@ export const processZipExtraction = inngest.createFunction(
             originalName: fileName,
             mimeType,
             eventId,
-            uploadId,
+            uploadSessionId: uploadId,
             status: "QUEUED"
           }
         });
