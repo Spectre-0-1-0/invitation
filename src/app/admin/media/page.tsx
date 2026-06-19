@@ -1,7 +1,7 @@
 'use client';
-import Image from "next/image";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import {
   Plus,
   Upload,
@@ -19,50 +19,25 @@ import {
   CheckCircle,
   AlertCircle,
   CheckSquare,
-  Square
 } from 'lucide-react';
 import { Slideover } from '@/components/admin/ui/Slideover';
 import { MediaUploader } from '@/components/admin/MediaUploader';
 
-interface Media {
-  id: string;
-  url: string;
-  type: string;
-  title?: string;
-  description?: string;
-  featured: boolean;
-  isHiddenGem: boolean;
-  status?: string;
-  eventId: string;
-  event?: { title: string };
-  taggedPeople?: { id: string, name: string }[];
-}
-
-interface Event {
-  id: string;
-  title: string;
-}
-
-interface Person {
-  id: string;
-  name: string;
-}
-
-export default function MediaPage() {
-  const [mediaList, setMediaList] = useState<Media[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
+export default function MediaManagement() {
+  const [mediaList, setMediaList] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [people, setPeople] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSlideoverOpen, setIsSlideoverOpen] = useState(false);
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [currentMedia, setCurrentMedia] = useState<Media | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploaderOpen, setIsUploaderOpen] = useState(false);
+  const [currentMedia, setCurrentMedia] = useState<any>(null);
   const [selectedEventId, setSelectedEventId] = useState('');
-
-  // Bulk operations state
   const [selectedMediaIds, setSelectedMediaIds] = useState<string[]>([]);
-  const [isBulkTagOpen, setIsBulkTagOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('ALL');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Form State
   const [formData, setFormData] = useState({
     url: '',
     type: 'PHOTO',
@@ -74,41 +49,36 @@ export default function MediaPage() {
     taggedPeopleIds: [] as string[]
   });
 
-  const fetchData = async () => {
-    setIsLoading(true);
+  const fetchData = useCallback(async () => {
     try {
+      setIsLoading(true);
       const [mediaRes, eventsRes, peopleRes] = await Promise.all([
         fetch('/api/admin/media'),
         fetch('/api/admin/events'),
         fetch('/api/admin/people')
       ]);
-      const [mediaData, eventsData, peopleData] = await Promise.all([
-        mediaRes.json(),
-        eventsRes.json(),
-        peopleRes.json()
-      ]);
 
-      if (Array.isArray(mediaData)) setMediaList(mediaData);
-      if (Array.isArray(eventsData)) {
-        setEvents(eventsData);
-        if (eventsData.length > 0 && !selectedEventId) {
-          setSelectedEventId(eventsData[0].id);
-        }
+      const mediaData = await mediaRes.json();
+      const eventsData = await eventsRes.json();
+      const peopleData = await peopleRes.json();
+
+      setMediaList(mediaData);
+      setEvents(eventsData);
+      setPeople(peopleData);
+
+      if (eventsData.length > 0 && !selectedEventId) {
+        setSelectedEventId(eventsData[0].id);
       }
-      if (Array.isArray(peopleData)) setPeople(peopleData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedEventId]);
 
   useEffect(() => {
     fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchData]);
 
   const openCreate = () => {
     setCurrentMedia(null);
@@ -125,7 +95,7 @@ export default function MediaPage() {
     setIsSlideoverOpen(true);
   };
 
-  const openEdit = (media: Media) => {
+  const openEdit = (media: any) => {
     setCurrentMedia(media);
     setFormData({
       url: media.url,
@@ -133,11 +103,54 @@ export default function MediaPage() {
       title: media.title || '',
       description: media.description || '',
       eventId: media.eventId,
-      featured: media.featured,
-      isHiddenGem: media.isHiddenGem,
-      taggedPeopleIds: media.taggedPeople?.map(p => p.id) || []
+      featured: media.featured || false,
+      isHiddenGem: media.isHiddenGem || false,
+      taggedPeopleIds: media.taggedPeople?.map((p: any) => p.id) || []
     });
     setIsSlideoverOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const url = currentMedia
+        ? `/api/admin/media/${currentMedia.id}`
+        : '/api/admin/media';
+      const method = currentMedia ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (res.ok) {
+        setIsSlideoverOpen(false);
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Failed to save media:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!currentMedia || !confirm('Are you sure you want to remove this memory?')) return;
+
+    try {
+      const res = await fetch(`/api/admin/media/${currentMedia.id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        setIsSlideoverOpen(false);
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Failed to delete media:', error);
+    }
   };
 
   const togglePerson = (personId: string) => {
@@ -149,184 +162,104 @@ export default function MediaPage() {
     }));
   };
 
-  const toggleMediaSelection = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    setSelectedMediaIds(prev =>
-      prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]
-    );
-  };
+  const handleBulkDelete = async () => {
+    if (selectedMediaIds.length === 0 || !confirm(`Delete ${selectedMediaIds.length} items?`)) return;
 
-  const handleBulkAction = async (action: string, data: any = {}) => {
-    if (selectedMediaIds.length === 0) return;
-    if (action === 'DELETE' && !confirm(`Delete ${selectedMediaIds.length} memories?`)) return;
-
-    setIsSubmitting(true);
     try {
-      const res = await fetch('/api/admin/media/bulk', {
-        method: 'POST',
+      await fetch('/api/admin/media/bulk', {
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, mediaIds: selectedMediaIds, data })
+        body: JSON.stringify({ ids: selectedMediaIds })
       });
-      if (res.ok) {
-        setSelectedMediaIds([]);
-        fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-        if (action === 'TAG') setIsBulkTagOpen(false);
-      }
+      setSelectedMediaIds([]);
+      fetchData();
     } catch (error) {
-      console.error('Bulk action failed:', error);
-    } finally {
-      setIsSubmitting(false);
+      console.error('Bulk delete failed');
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      const url = currentMedia ? `/api/admin/media/${currentMedia.id}` : '/api/admin/media';
-      const method = currentMedia ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (res.ok) {
-        setIsSlideoverOpen(false);
-        fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-      }
-    } catch (error) {
-      console.error('Submit failed:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!currentMedia || !confirm('Are you sure you want to delete this memory?')) return;
-    setIsSubmitting(true);
-    try {
-      const res = await fetch(`/api/admin/media/${currentMedia.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setIsSlideoverOpen(false);
-        fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-      }
-    } catch (error) {
-      console.error('Delete failed:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const filteredMedia = mediaList.filter(m => {
+    const matchesSearch = (m.title?.toLowerCase() || '').includes(search.toLowerCase()) ||
+                         (m.description?.toLowerCase() || '').includes(search.toLowerCase());
+    const matchesType = filterType === 'ALL' || m.type === filterType;
+    return matchesSearch && matchesType;
+  });
 
   return (
-    <div className="p-8 pb-32">
-      <div className="flex justify-between items-end mb-12">
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-playfair text-[#1A2B48] mb-2">Media Library</h1>
-          <p className="text-[#333333]/60 font-serif italic">Managing the visual history of the class.</p>
+          <h1 className="text-3xl font-serif text-[#1A2B48]">Media Archive</h1>
+          <p className="text-[#333333]/60">Manage photos, videos, and milestones.</p>
         </div>
-        <div className="flex space-x-4">
+        <div className="flex gap-3">
           <button
-            onClick={() => setIsUploadOpen(true)}
-            className="bg-[#1A2B48] text-[#FDFCF8] px-6 py-3 rounded-xl font-medium flex items-center space-x-2 hover:bg-[#1A2B48]/90 transition-all shadow-lg"
+            onClick={() => setIsUploaderOpen(true)}
+            className="flex items-center space-x-2 bg-[#D4AF37] text-[#1A2B48] px-6 py-3 rounded-lg font-medium hover:bg-[#D4AF37]/90 transition-all shadow-md"
           >
             <Upload className="w-4 h-4" />
             <span>Bulk Upload</span>
           </button>
           <button
             onClick={openCreate}
-            className="bg-[#D4AF37] text-[#FDFCF8] px-6 py-3 rounded-xl font-medium flex items-center space-x-2 hover:bg-[#D4AF37]/90 transition-all shadow-lg"
+            className="flex items-center space-x-2 bg-[#1A2B48] text-[#FDFCF8] px-6 py-3 rounded-lg font-medium hover:bg-[#1A2B48]/90 transition-all shadow-md"
           >
             <Plus className="w-4 h-4" />
-            <span>Single Entry</span>
+            <span>Add Single</span>
           </button>
         </div>
       </div>
 
-      {/* Bulk Toolbar */}
-      {selectedMediaIds.length > 0 && (
-        <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[100] bg-[#1A2B48] text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center space-x-8 animate-in fade-in slide-in-from-bottom-4">
-          <div className="flex items-center space-x-2 border-r border-white/20 pr-8">
-            <CheckSquare className="w-5 h-5 text-[#D4AF37]" />
-            <span className="font-bold text-lg">{selectedMediaIds.length} Selected</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setIsBulkTagOpen(true)}
-              className="flex items-center space-x-2 hover:text-[#D4AF37] transition-colors"
-            >
-              <Tag className="w-4 h-4" />
-              <span>Tag People</span>
-            </button>
-            <button
-              onClick={() => handleBulkAction('FEATURE', { featured: true })}
-              className="flex items-center space-x-2 hover:text-[#D4AF37] transition-colors"
-            >
-              <Star className="w-4 h-4" />
-              <span>Feature</span>
-            </button>
-            <button
-              onClick={() => handleBulkAction('DELETE')}
-              className="flex items-center space-x-2 text-red-400 hover:text-red-500 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>Delete</span>
-            </button>
-          </div>
-          <button
-            onClick={() => setSelectedMediaIds([])}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between mb-8 bg-[#FDFCF8] p-4 rounded-2xl border border-[#D4AF37]/10">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A2B48]/20" />
+      {/* Toolbar */}
+      <div className="bg-white p-4 rounded-xl border border-[#D4AF37]/10 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#333333]/30" />
           <input
             type="text"
-            placeholder="Search memories..."
-            className="w-full pl-12 pr-4 py-3 bg-white border border-[#D4AF37]/20 rounded-xl focus:ring-2 focus:ring-[#D4AF37] outline-none text-sm"
+            placeholder="Search by title or description..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-[#FDFCF8] border border-[#1A2B48]/10 rounded-lg focus:ring-2 focus:ring-[#D4AF37] outline-none"
           />
         </div>
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2 bg-white border border-[#D4AF37]/20 px-4 py-2 rounded-xl">
-             <Calendar className="w-4 h-4 text-[#D4AF37]" />
-             <select
-               value={selectedEventId}
-               onChange={(e) => setSelectedEventId(e.target.value)}
-               className="text-sm bg-transparent outline-none text-[#1A2B48]"
-             >
-               {events.map(e => (
-                 <option key={e.id} value={e.id}>{e.title}</option>
-               ))}
-             </select>
-          </div>
-          <button className="flex items-center space-x-2 px-4 py-3 bg-white border border-[#D4AF37]/20 rounded-xl hover:bg-[#FDFCF8] transition-colors text-[#1A2B48]/60">
-            <Filter className="w-4 h-4" />
-            <span>Filter</span>
-          </button>
+        <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+          {['ALL', 'PHOTO', 'VIDEO', 'MEME'].map(type => (
+            <button
+              key={type}
+              onClick={() => setFilterType(type)}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                filterType === type
+                  ? 'bg-[#1A2B48] text-white'
+                  : 'bg-[#FDFCF8] text-[#1A2B48]/60 border border-[#1A2B48]/10 hover:border-[#D4AF37]'
+              }`}
+            >
+              {type}
+            </button>
+          ))}
         </div>
+        {selectedMediaIds.length > 0 && (
+          <div className="flex items-center gap-3 pl-4 border-l border-[#D4AF37]/20">
+            <span className="text-xs font-bold text-[#D4AF37]">{selectedMediaIds.length} Selected</span>
+            <button
+              onClick={handleBulkDelete}
+              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              title="Delete Selected"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-24 text-[#333333]/40">
-          <Loader2 className="w-12 h-12 animate-spin mb-4" />
-          <p className="font-serif italic text-lg">Developing the film...</p>
+        <div className="flex flex-col items-center justify-center py-32 space-y-4">
+          <Loader2 className="w-12 h-12 text-[#D4AF37] animate-spin" />
+          <p className="text-[#1A2B48] font-serif italic">Consulting the archives...</p>
         </div>
-      ) : mediaList.length === 0 ? (
-        <div className="bg-white border-2 border-dashed border-[#D4AF37]/20 rounded-2xl p-16 text-center">
+      ) : filteredMedia.length === 0 ? (
+        <div className="text-center py-32 bg-white rounded-2xl border-2 border-dashed border-[#D4AF37]/20">
           <ImageIcon className="w-16 h-16 text-[#D4AF37]/20 mx-auto mb-4" />
-          <h3 className="text-xl font-playfair text-[#1A2B48] mb-2">No media found</h3>
+          <h3 className="text-xl font-serif text-[#1A2B48] mb-2">No Memories Found</h3>
           <p className="text-[#333333]/40 mb-8">Start populating the archive with your first photo or video.</p>
           <button
             onClick={openCreate}
@@ -337,7 +270,7 @@ export default function MediaPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {mediaList.map((media) => (
+          {filteredMedia.map((media) => (
             <div
               key={media.id}
               onClick={() => openEdit(media)}
@@ -346,13 +279,16 @@ export default function MediaPage() {
               } overflow-hidden relative group cursor-pointer hover:shadow-lg transition-all`}
             >
               {media.url ? (
-                <Image fill
-                  src={media.url}
-                  alt={media.title || ''}
-                  className={`w-full h-full object-cover grayscale ${
-                    selectedMediaIds.includes(media.id) ? 'grayscale-0' : 'group-hover:grayscale-0'
-                  } transition-all duration-500`}
-                />
+                <div className="relative w-full h-full">
+                  <Image
+                    src={media.url}
+                    alt={media.title || 'Archive Media'}
+                    fill
+                    className={`object-cover grayscale ${
+                      selectedMediaIds.includes(media.id) ? 'grayscale-0' : 'group-hover:grayscale-0'
+                    } transition-all duration-500`}
+                  />
+                </div>
               ) : (
                 <div className="w-full h-full bg-[#1A2B48]/5 flex items-center justify-center">
                   {media.type === 'VIDEO' ? (
@@ -363,99 +299,57 @@ export default function MediaPage() {
                 </div>
               )}
 
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
+                <p className="text-white text-[10px] font-medium truncate">{media.title || 'Untitled'}</p>
+                <p className="text-white/60 text-[8px] uppercase tracking-widest">{media.type}</p>
+              </div>
+
               {/* Selection Checkbox */}
-              <div
-                className={`absolute top-3 left-3 z-10 transition-opacity ${
-                  selectedMediaIds.includes(media.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedMediaIds(prev =>
+                    prev.includes(media.id) ? prev.filter(id => id !== media.id) : [...prev, media.id]
+                  );
+                }}
+                className={`absolute top-2 left-2 p-1.5 rounded-md backdrop-blur-md transition-all ${
+                  selectedMediaIds.includes(media.id)
+                    ? 'bg-[#D4AF37] text-[#1A2B48]'
+                    : 'bg-black/20 text-white opacity-0 group-hover:opacity-100'
                 }`}
-                onClick={(e) => toggleMediaSelection(e, media.id)}
               >
-                {selectedMediaIds.includes(media.id) ? (
-                  <CheckSquare className="w-6 h-6 text-[#D4AF37] fill-[#1A2B48]" />
-                ) : (
-                  <Square className="w-6 h-6 text-white/60" />
-                )}
-              </div>
+                <CheckSquare className="w-3 h-3" />
+              </button>
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end">
-                <p className="text-white text-xs font-medium truncate">{media.title || 'Untitled'}</p>
-                <p className="text-white/60 text-[10px] truncate">{media.event?.title}</p>
-              </div>
-
-              <div className="absolute top-2 right-2 flex space-x-1">
-                {media.status === 'PROCESSING' && (
-                  <div className="bg-blue-500 p-1 rounded shadow-sm">
-                    <Loader2 className="w-3 h-3 text-white animate-spin" />
-                  </div>
-                )}
-                {media.status === 'FAILED' && (
-                  <div className="bg-red-500 p-1 rounded shadow-sm">
-                    <AlertCircle className="w-3 h-3 text-white" />
-                  </div>
-                )}
-                {media.featured && (
-                  <div className="bg-[#D4AF37] p-1 rounded shadow-sm">
-                    <Star className="w-3 h-3 text-white fill-white" />
-                  </div>
-                )}
-                {media.isHiddenGem && (
-                  <div className="bg-purple-500 p-1 rounded shadow-sm">
-                    <Gem className="w-3 h-3 text-white" />
-                  </div>
-                )}
-              </div>
+              {media.featured && (
+                <div className="absolute top-2 right-2 p-1 bg-[#D4AF37] rounded-md shadow-sm">
+                  <Star className="w-3 h-3 text-[#1A2B48] fill-[#1A2B48]" />
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      {/* Bulk Tag Slideover */}
-      <Slideover
-        isOpen={isBulkTagOpen}
-        onClose={() => setIsBulkTagOpen(false)}
-        title={`Tag ${selectedMediaIds.length} Memories`}
-      >
-        <div className="space-y-6">
-          <p className="text-sm text-[#333333]/60 italic font-serif">
-            Select people who appear in all these memories.
-          </p>
-          <div className="flex flex-wrap gap-2 p-4 bg-[#FDFCF8] border border-[#1A2B48]/10 rounded-2xl h-96 overflow-y-auto">
-            {people.map(person => (
-              <button
-                key={person.id}
-                type="button"
-                onClick={() => togglePerson(person.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  formData.taggedPeopleIds.includes(person.id)
-                    ? 'bg-[#1A2B48] text-white'
-                    : 'bg-white text-[#1A2B48]/60 border border-[#D4AF37]/20'
-                }`}
-              >
-                {person.name}
-              </button>
-            ))}
-          </div>
-          <div className="fixed bottom-0 right-0 left-0 p-6 bg-[#FDFCF8] border-t border-[#D4AF37]/10 max-w-md ml-auto">
-            <button
-              onClick={() => handleBulkAction('TAG', { peopleIds: formData.taggedPeopleIds })}
-              disabled={isSubmitting || formData.taggedPeopleIds.length === 0}
-              className="w-full bg-[#1A2B48] text-[#FDFCF8] py-4 rounded-lg font-medium flex items-center justify-center space-x-2 hover:bg-[#1A2B48]/90 transition-all shadow-lg disabled:opacity-50"
-            >
-              {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
-              <span>Apply Tags</span>
-            </button>
-          </div>
-        </div>
-      </Slideover>
-
       {/* Bulk Upload Slideover */}
       <Slideover
-        isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
+        isOpen={isUploaderOpen}
+        onClose={() => setIsUploaderOpen(false)}
         title="Production Ingestion"
       >
         <div className="space-y-8">
-          <div className="bg-[#FDFCF8] p-6 rounded-2xl border border-[#D4AF37]/20">
+          <div className="p-4 bg-[#D4AF37]/5 border border-[#D4AF37]/20 rounded-lg">
+            <h4 className="text-sm font-bold text-[#1A2B48] mb-2 flex items-center">
+              <AlertCircle className="w-4 h-4 mr-2" /> Ingestion Policy
+            </h4>
+            <ul className="text-xs text-[#1A2B48]/70 space-y-1 list-disc pl-4">
+              <li>Media will be processed for thumbnails automatically.</li>
+              <li>Duplicates are prevented via MD5 checksum validation.</li>
+              <li>Ensure all faces are visible for better tagging.</li>
+            </ul>
+          </div>
+
+          <div>
             <label className="block text-sm font-bold uppercase tracking-widest text-[#1A2B48] mb-4">
               Step 1: Select Container (Event)
             </label>
@@ -481,8 +375,6 @@ export default function MediaPage() {
               eventId={selectedEventId}
               onUploadComplete={() => {
                 fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
               }}
             />
           </div>
@@ -499,7 +391,12 @@ export default function MediaPage() {
           <div className="space-y-6">
             {formData.url && (
               <div className="relative aspect-video bg-[#FDFCF8] rounded-2xl border border-[#D4AF37]/20 overflow-hidden group">
-                <Image fill alt="" src={formData.url} className="w-full h-full object-cover" />
+                <Image
+                  src={formData.url}
+                  alt="Media Preview"
+                  fill
+                  className="object-cover"
+                />
               </div>
             )}
 
