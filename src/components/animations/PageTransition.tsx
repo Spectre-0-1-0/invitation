@@ -2,10 +2,15 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { ReactNode } from "react";
+import { useEffect } from "react";
+import { trackPageView } from "@/lib/analytics";
 
-export function PageTransition({ children }: { children: ReactNode }) {
+export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+
+  useEffect(() => {
+    trackPageView(pathname);
+  }, [pathname]);
 
   return (
     <AnimatePresence mode="wait">
@@ -15,8 +20,8 @@ export function PageTransition({ children }: { children: ReactNode }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         transition={{
-          duration: 0.3,
-          ease: "easeInOut",
+          duration: 0.5,
+          ease: [0.22, 1, 0.36, 1]
         }}
       >
         {children}

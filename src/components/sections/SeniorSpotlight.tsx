@@ -2,6 +2,7 @@ import { Senior } from "@/types/archive";
 import { Heading } from "@/components/ui/Heading";
 import { Card } from "@/components/ui/Card";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Star } from "lucide-react";
 
 export function SeniorSpotlight({ senior }: { senior: Senior }) {
@@ -9,11 +10,18 @@ export function SeniorSpotlight({ senior }: { senior: Senior }) {
     <Card variant="scrapbook" className="bg-heritage-navy text-white border-none p-1">
       <div className="p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div className="relative aspect-[4/5] bg-white/10 rounded-sm overflow-hidden rotate-1">
-           <div className="absolute inset-0 flex items-center justify-center text-white/10 font-serif text-4xl -rotate-12">SPOTLIGHT</div>
+           {senior.image && (
+             <Image
+               src={senior.image}
+               alt={senior.name}
+               fill
+               className="object-cover grayscale hover:grayscale-0 transition-all duration-700"
+             />
+           )}
         </div>
         <div>
            <div className="flex items-center gap-2 text-champagne-gold mb-6">
-              <Star size={16} fill="currentColor" />
+              <Star size={16} fill="currentColor" aria-hidden="true" />
               <span className="text-[10px] font-mono uppercase tracking-[0.3em] font-bold">Class Spotlight</span>
            </div>
            <Heading level={2} className="text-white text-5xl md:text-6xl mb-6">{senior.name}</Heading>
@@ -29,10 +37,16 @@ export function SeniorSpotlight({ senior }: { senior: Senior }) {
                       <span className="text-parchment-base/80">{h}</span>
                    </li>
                  ))}
+                 {(!senior.memoryHighlights || senior.memoryHighlights.length === 0) && (
+                   <li className="text-sm italic text-parchment-base/40">No highlights shared yet.</li>
+                 )}
               </ul>
            </div>
-           <Link href={`/seniors/${senior.id}`} className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-champagne-gold hover:text-white transition-colors group">
-              View Full Profile <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+           <Link
+             href={`/seniors/${senior.id}`}
+             className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-champagne-gold hover:text-white transition-colors group focus:outline-none focus:ring-2 focus:ring-champagne-gold focus:ring-offset-4 focus:ring-offset-heritage-navy rounded-sm"
+           >
+              View Full Profile <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />
            </Link>
         </div>
       </div>

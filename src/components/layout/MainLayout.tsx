@@ -16,9 +16,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-6 focus:py-3 focus:bg-heritage-navy focus:text-white focus:rounded-md focus:shadow-2xl"
+      >
+        Skip to content
+      </a>
       <Navbar />
       <PageTransition>
-        <main>{children}</main>
+        <main id="main-content" tabIndex={-1}>{children}</main>
       </PageTransition>
       <Footer />
     </>

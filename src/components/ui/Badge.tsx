@@ -8,13 +8,13 @@ export function Badge({ children, className, variant = "primary", ...props }: Ba
   const variants = {
     primary: "bg-heritage-navy text-white",
     secondary: "bg-champagne-gold text-heritage-navy",
-    outline: "border border-heritage-navy text-heritage-navy",
+    outline: "border border-parchment-dark text-charcoal-muted",
   };
 
   return (
     <span
       className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono tracking-wider uppercase",
+        "inline-flex items-center px-3 py-1 rounded-full text-[9px] font-mono tracking-widest uppercase font-bold",
         variants[variant],
         className
       )}

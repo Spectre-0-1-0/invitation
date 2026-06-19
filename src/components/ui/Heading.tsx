@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import { JSX } from "react";
 
 interface HeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
   level?: 1 | 2 | 3 | 4;
@@ -7,9 +6,9 @@ interface HeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
 
 export function Heading({ children, className, level = 1, ...props }: HeadingProps) {
   const levels = {
-    1: "text-4xl md:text-6xl font-serif text-heritage-navy",
-    2: "text-3xl md:text-4xl font-serif text-heritage-navy",
-    3: "text-2xl font-serif text-heritage-navy",
+    1: "text-5xl md:text-8xl font-serif text-heritage-navy tracking-tight",
+    2: "text-4xl md:text-6xl font-serif text-heritage-navy tracking-tight",
+    3: "text-2xl md:text-3xl font-serif text-heritage-navy",
     4: "text-xl font-serif text-heritage-navy",
   };
 

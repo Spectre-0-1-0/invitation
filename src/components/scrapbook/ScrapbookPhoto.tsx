@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 interface ScrapbookPhotoProps {
   src: string;
@@ -80,7 +81,14 @@ export const ScrapbookPhoto: React.FC<ScrapbookPhotoProps> = ({
         transition={{ type: 'spring', damping: 15 }}
         className={`${getFrameStyles()} overflow-hidden transition-shadow duration-300 group-hover:shadow-2xl`}
       >
-        <img src={src} alt={alt} className="w-full h-auto object-cover" />
+        <div className="relative aspect-square w-full">
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            className="object-cover"
+          />
+        </div>
         {type === 'polaroid' && caption && (
           <div className={`mt-2 text-center text-sm text-charcoal/80 ${handwriting}`}>
             {caption}

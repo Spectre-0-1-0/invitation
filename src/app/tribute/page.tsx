@@ -1,19 +1,24 @@
-"use client";
 import { Container } from "@/components/layout/Container";
 import { Section } from "@/components/layout/Section";
 import { Heading } from "@/components/ui/Heading";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { Heart, ArrowRight, Sparkles } from "lucide-react";
+import TributeClient from "./TributeClient";
 
+export const metadata = {
+  title: "A Final Tribute",
+  description: "A cinematic farewell to the Class of 2025.",
+};
 
 export default function TributePage() {
   return (
     <main className="bg-heritage-navy text-parchment-base min-h-screen selection:bg-champagne-gold selection:text-heritage-navy">
+      <TributeClient />
       {/* Intro section */}
       <Section className="bg-heritage-navy text-center py-32 md:py-48 min-h-[90vh] flex flex-col justify-center relative overflow-hidden">
         {/* Background Atmosphere */}
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-heritage-navy via-heritage-navy to-black/40 opacity-50" />
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_#1A2B48_0%,_#000_100%)] opacity-50" />
 
         <Container className="relative z-10">
           <Link href="/" className="group inline-flex items-center gap-2 text-champagne-gold hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-16">
@@ -108,7 +113,6 @@ export default function TributePage() {
               </Link>
               <span className="text-parchment-muted/40 font-mono text-xs uppercase">or</span>
               <button
-                onClick={() => window.print()}
                 className="text-parchment-base hover:text-champagne-gold transition-colors font-bold uppercase tracking-widest text-xs"
               >
                 Download Archive Summary
