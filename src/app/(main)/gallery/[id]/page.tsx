@@ -16,12 +16,12 @@ export async function generateMetadata({ params }: any) {
   if (!memory) return { title: "Memory Not Found" };
 
   return {
-    title: memory.title,
-    description: memory.description,
+    title: memory.title || 'Memory',
+    description: memory.description || 'View this memory in the archive.',
     openGraph: {
-      title: memory.title,
-      description: memory.description,
-      images: [memory.url],
+      title: memory.title || 'Memory',
+      description: memory.description || 'View this memory in the archive.',
+      images: memory.url ? [memory.url] : [],
     },
   };
 }
@@ -47,13 +47,15 @@ export default async function MemoryDetailPage({ params }: any) {
           <div className="lg:col-span-8">
             <div className="bg-white p-4 shadow-scrapbook border border-parchment-muted rounded-sm rotate-1">
               <div className="aspect-video bg-parchment-muted relative overflow-hidden rounded-sm">
-                <Image
-                  src={memory.url}
-                  alt={memory.title}
-                  fill
-                  className="object-cover"
-                  priority
-                />
+                {memory.url && (
+                  <Image
+                    src={memory.url}
+                    alt={memory.title || 'Memory'}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -74,7 +76,9 @@ export default async function MemoryDetailPage({ params }: any) {
             <div className="space-y-6 pt-8 border-t border-parchment-muted">
               <div className="flex items-center gap-4 text-sm">
                 <Calendar size={16} className="text-champagne-gold" />
-                <span className="font-mono text-charcoal-muted">{new Date(memory.date).toLocaleDateString()}</span>
+                <span className="font-mono text-charcoal-muted">
+                  {memory.date ? new Date(memory.date).toLocaleDateString() : 'N/A'}
+                </span>
               </div>
 
               {memory.peopleInvolved && memory.peopleInvolved.length > 0 && (

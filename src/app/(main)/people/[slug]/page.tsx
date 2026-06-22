@@ -38,7 +38,7 @@ export default async function SeniorProfilePage({ params }: any) {
                 {senior.image && (
                   <Image
                     src={senior.image}
-                    alt={senior.name}
+                    alt={senior.name || 'Senior'}
                     fill
                     className="object-cover"
                     priority
@@ -73,13 +73,13 @@ export default async function SeniorProfilePage({ params }: any) {
                 <div>
                   <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-champagne-gold mb-6 font-bold">Academic Journey</h3>
                   <ul className="space-y-4">
-                    {senior.achievements.map((achievement, i) => (
+                    {senior.achievements?.map((achievement, i) => (
                       <li key={i} className="flex items-start gap-4">
                         <div className="w-1.5 h-1.5 rounded-full bg-champagne-gold mt-2 flex-shrink-0" />
                         <span className="text-sm text-charcoal leading-relaxed">{achievement}</span>
                       </li>
                     ))}
-                    {senior.achievements.length === 0 && (
+                    {(!senior.achievements || senior.achievements.length === 0) && (
                        <li className="text-sm text-charcoal-muted italic">No specific achievements listed.</li>
                     )}
                   </ul>
@@ -88,7 +88,7 @@ export default async function SeniorProfilePage({ params }: any) {
                 <div>
                   <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-champagne-gold mb-6 font-bold">Class Identity</h3>
                   <div className="space-y-4 text-sm text-charcoal-muted font-mono uppercase tracking-widest">
-                     <p>Class of {senior.graduationYear}</p>
+                     <p>Class of {senior.graduationYear || 2025}</p>
                      <p>{senior.nickname ? `Known as: "${senior.nickname}"` : 'Full Name Directory'}</p>
                   </div>
                 </div>
@@ -110,7 +110,7 @@ export default async function SeniorProfilePage({ params }: any) {
             </Link>
           </div>
 
-          {memories.length > 0 ? (
+          {memories && memories.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
               {memories.map((memory) => (
                 <Link
@@ -120,18 +120,22 @@ export default async function SeniorProfilePage({ params }: any) {
                 >
                   <div className="bg-white p-3 rounded-md shadow-scrapbook border border-parchment-muted group cursor-pointer hover:-rotate-1 transition-all duration-500">
                     <div className="aspect-video rounded-sm bg-parchment-muted overflow-hidden relative">
-                       <Image
-                         src={memory.url}
-                         alt=""
-                         fill
-                         className="object-cover"
-                       />
+                       {memory.url && (
+                         <Image
+                           src={memory.url}
+                           alt=""
+                           fill
+                           className="object-cover"
+                         />
+                       )}
                        <div className="absolute inset-0 bg-heritage-navy/0 group-hover:bg-heritage-navy/10 transition-colors" />
                     </div>
                     <div className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <Badge variant="outline" className="text-[9px] py-0 border-parchment-dark/30 uppercase tracking-widest">{memory.category}</Badge>
-                        <span className="text-[9px] font-mono text-charcoal-muted opacity-50">{new Date(memory.date).toLocaleDateString()}</span>
+                        <span className="text-[9px] font-mono text-charcoal-muted opacity-50">
+                          {memory.date ? new Date(memory.date).toLocaleDateString() : 'N/A'}
+                        </span>
                       </div>
                       <h4 className="font-serif text-xl text-heritage-navy group-hover:text-champagne-gold transition-colors leading-tight">
                         {memory.title}

@@ -41,7 +41,7 @@ export default async function MessagesPage() {
           </FadeIn>
         </div>
 
-        {messages.length > 0 ? (
+        {messages && messages.length > 0 ? (
           <div className="columns-1 md:columns-2 lg:columns-3 gap-10 space-y-10">
             {messages.map((message, i) => {
               const target = message.targetId ? seniors.find(s => s.id === message.targetId) : null;
@@ -53,12 +53,12 @@ export default async function MessagesPage() {
 
                     <div className="flex items-center gap-2 mb-6">
                       <Badge variant="outline" className="flex items-center gap-1.5 text-[9px] py-1 px-3 border-parchment-dark/50 text-charcoal-muted uppercase tracking-widest">
-                        {getCategoryIcon(message.category)}
+                        {getCategoryIcon(message.category || '')}
                         {message.category?.replace('-', ' ')}
                       </Badge>
                       {target && (
                         <Badge variant="secondary" className="text-[9px] py-1 px-3 font-bold uppercase tracking-widest">
-                          To: {target.name}
+                          To: {target.name || 'Anonymous'}
                         </Badge>
                       )}
                     </div>
@@ -69,13 +69,13 @@ export default async function MessagesPage() {
 
                     <div className="mt-auto pt-8 border-t border-parchment-muted flex justify-between items-end">
                       <div>
-                        <span className="block text-sm font-bold text-heritage-navy tracking-tight">{message.from}</span>
+                        <span className="block text-sm font-bold text-heritage-navy tracking-tight">{message.from || 'Anonymous'}</span>
                         {message.relationship && (
                           <span className="block text-[10px] font-mono uppercase tracking-widest text-charcoal-muted mt-1 opacity-70">{message.relationship}</span>
                         )}
                       </div>
                       <span className="text-[10px] font-mono text-charcoal-muted opacity-40 uppercase tracking-tighter">
-                        {new Date(message.timestamp).getFullYear()}
+                        {message.timestamp ? new Date(message.timestamp).getFullYear() : '2025'}
                       </span>
                     </div>
                   </div>

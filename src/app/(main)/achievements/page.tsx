@@ -40,16 +40,16 @@ export default async function AchievementsPage() {
           </FadeIn>
         </div>
 
-        {achievements.length > 0 ? (
+        {achievements && achievements.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto">
             {achievements.map((achievement, i) => {
-              const recipient = seniors.find(s => s.id === achievement.recipientId);
+              const recipient = seniors ? seniors.find(s => s.id === achievement.recipientId) : null;
 
               return (
                 <FadeIn key={achievement.id} delay={i * 0.1}>
                   <div className="p-10 border border-parchment-dark/30 bg-white shadow-scrapbook rounded-md flex flex-col md:flex-row gap-8 group hover:border-champagne-gold transition-all duration-500">
                     <div className="p-5 bg-parchment-muted rounded-full h-fit w-fit text-heritage-navy group-hover:bg-heritage-navy group-hover:text-white transition-all duration-500 flex-shrink-0">
-                      {getIcon(achievement.category)}
+                      {getIcon(achievement.category || '')}
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-4">
@@ -62,7 +62,7 @@ export default async function AchievementsPage() {
                       </p>
                       <div className="pt-6 border-t border-parchment-muted flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-heritage-navy">
                         <Star size={12} className="text-champagne-gold fill-champagne-gold" aria-hidden="true" />
-                        <span>Recipient: <span className="text-heritage-navy">{recipient?.name || achievement.recipientId}</span></span>
+                        <span>Recipient: <span className="text-heritage-navy">{recipient?.name || achievement.recipientId || 'Anonymous'}</span></span>
                       </div>
                     </div>
                   </div>

@@ -24,9 +24,9 @@ export default function GalleryClient({
   const [search, setSearch] = useState('');
 
   const filteredMemories = initialMemories.filter(m => {
-    const matchesFilter = filter === 'All' || m.category.toLowerCase() === filter.toLowerCase();
-    const matchesSearch = m.title.toLowerCase().includes(search.toLowerCase()) ||
-                         m.description.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = filter === 'All' || m.category?.toLowerCase() === filter.toLowerCase();
+    const matchesSearch = (m.title || '').toLowerCase().includes(search.toLowerCase()) ||
+                         (m.description || '').toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -77,7 +77,7 @@ export default function GalleryClient({
                     <div className="mt-6 px-2 pb-2">
                       <h3 className="font-serif text-2xl text-heritage-navy group-hover:text-champagne-gold transition-colors">{album.title}</h3>
                       <p className="text-[10px] font-mono uppercase tracking-widest mt-2 text-charcoal-muted">
-                         {album.memoryIds.length} Captured Moments
+                         {album.memoryIds?.length || 0} Captured Moments
                       </p>
                     </div>
                   </Card>
@@ -151,19 +151,23 @@ export default function GalleryClient({
                     >
                       <Card variant="polaroid" className="group cursor-pointer">
                         <div className="aspect-auto bg-parchment-muted overflow-hidden relative min-h-[200px]">
-                           <Image
-                             src={memory.url}
-                             alt=""
-                             width={400}
-                             height={600}
-                             className="w-full h-auto object-cover"
-                           />
+                           {memory.url && (
+                             <Image
+                               src={memory.url}
+                               alt=""
+                               width={400}
+                               height={600}
+                               className="w-full h-auto object-cover"
+                             />
+                           )}
                            <div className="absolute inset-0 bg-heritage-navy/0 group-hover:bg-heritage-navy/5 transition-colors duration-500" aria-hidden="true" />
                         </div>
                         <div className="mt-4 px-1">
                           <div className="flex justify-between items-center mb-2">
                             <Badge variant="outline" className="text-[9px] py-0 border-parchment-dark">{memory.category}</Badge>
-                            <span className="text-[9px] font-mono text-charcoal-muted opacity-60">{new Date(memory.date).toLocaleDateString()}</span>
+                            <span className="text-[9px] font-mono text-charcoal-muted opacity-60">
+                              {memory.date ? new Date(memory.date).toLocaleDateString() : 'N/A'}
+                            </span>
                           </div>
                           <h4 className="font-serif text-base text-heritage-navy group-hover:text-champagne-gold transition-colors leading-tight">
                             {memory.title}

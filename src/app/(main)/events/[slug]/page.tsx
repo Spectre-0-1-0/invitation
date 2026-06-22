@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: any) {
   if (!album) return { title: "Event Not Found" };
 
   return {
-    title: album.title,
+    title: album.title || 'Event',
     description: album.description || `Memories from ${album.title}`,
   };
 }
@@ -30,7 +30,7 @@ export default async function EventDetailPage({ params }: any) {
   if (!album) notFound();
 
   const allMemories = await getMemories();
-  const eventMemories = allMemories.filter(m => album.memoryIds.includes(m.id));
+  const eventMemories = allMemories.filter(m => (album.memoryIds || []).includes(m.id));
 
   return (
     <div className="flex flex-col">
@@ -72,12 +72,14 @@ export default async function EventDetailPage({ params }: any) {
                 <Link key={memory.id} href={`/gallery/${memory.id}`}>
                   <div className="break-inside-avoid bg-white p-3 rounded-md shadow-scrapbook border border-parchment-muted group cursor-pointer hover:rotate-1 transition-all duration-500">
                     <div className="aspect-square bg-parchment-muted overflow-hidden relative rounded-sm">
-                       <Image
-                         src={memory.url}
-                         alt=""
-                         fill
-                         className="object-cover"
-                       />
+                       {memory.url && (
+                         <Image
+                           src={memory.url}
+                           alt=""
+                           fill
+                           className="object-cover"
+                         />
+                       )}
                        <div className="absolute inset-0 bg-heritage-navy/0 group-hover:bg-heritage-navy/10 transition-colors" />
                     </div>
                     <div className="mt-4 px-2 pb-2">
