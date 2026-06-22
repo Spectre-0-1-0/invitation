@@ -1,4 +1,5 @@
 import { getArchiveStats } from './dashboard-stats';
+import Link from 'next/link';
 import {
   Layers,
   Calendar,
@@ -6,9 +7,11 @@ import {
   Image as ImageIcon,
   MessageSquare,
   TrendingUp,
-  Clock,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
+  Plus,
+  Upload,
+  UserPlus
 } from 'lucide-react';
 
 export default async function AdminDashboard() {
@@ -21,13 +24,22 @@ export default async function AdminDashboard() {
     { name: 'Media Assets', value: stats?.media || 0, icon: ImageIcon, color: 'text-amber-500' },
   ];
 
+  const quickActions = [
+    { name: 'Add Senior', href: '/admin/people', icon: UserPlus, color: 'bg-purple-500' },
+    { name: 'Upload Photo', href: '/admin/media', icon: Upload, color: 'bg-amber-500' },
+    { name: 'Add Event', href: '/admin/events', icon: Plus, color: 'bg-green-500' },
+    { name: 'Add Memory', href: '/admin/memories', icon: MessageSquare, color: 'bg-blue-500' },
+  ];
+
   const healthIssues = stats?.health.totalIssues || 0;
 
   return (
     <div className="space-y-8 pb-12">
-      <div>
-        <h1 className="font-playfair text-4xl text-[#1A2B48] mb-2">Dashboard</h1>
-        <p className="text-[#333333]/60">Welcome back, organizer. Here&apos;s the state of the archive.</p>
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="font-playfair text-4xl text-[#1A2B48] mb-2">Dashboard</h1>
+          <p className="text-[#333333]/60">Welcome back, organizer. Here&apos;s the state of the archive.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -44,6 +56,24 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
+      <div className="bg-white p-8 rounded-2xl border border-[#D4AF37]/20 shadow-sm">
+        <h2 className="font-playfair text-2xl text-[#1A2B48] mb-6">Quick Actions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {quickActions.map((action) => (
+            <Link
+              key={action.name}
+              href={action.href}
+              className="flex flex-col items-center p-6 rounded-xl bg-[#FDFCF8] border border-[#1A2B48]/5 hover:border-[#D4AF37] hover:shadow-md transition-all group"
+            >
+              <div className={`p-4 rounded-full ${action.color} text-white mb-4 group-hover:scale-110 transition-transform`}>
+                <action.icon className="w-6 h-6" />
+              </div>
+              <span className="font-serif font-medium text-[#1A2B48]">{action.name}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white rounded-xl border border-[#D4AF37]/20 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-[#D4AF37]/10 bg-[#FDFCF8] flex items-center justify-between">
@@ -56,7 +86,7 @@ export default async function AdminDashboard() {
                 <CheckCircle2 className="w-6 h-6" />
                 <div>
                   <p className="font-bold">Perfect Integrity</p>
-                  <p className="text-sm opacity-80">No orphaned records or broken relationships found.</p>
+                  <p className="text-sm opacity-80">No orphaned records found.</p>
                 </div>
               </div>
             ) : (
@@ -64,49 +94,23 @@ export default async function AdminDashboard() {
                 <AlertTriangle className="w-6 h-6" />
                 <div>
                   <p className="font-bold">{healthIssues} Issues Detected</p>
-                  <p className="text-sm opacity-80">Check for orphaned media or missing event assignments.</p>
+                  <p className="text-sm opacity-80">Check for orphaned media.</p>
                 </div>
               </div>
             )}
-
-            <div className="space-y-4 mt-6">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-[#333333]/60">Orphaned Media</span>
-                <span className={`text-sm font-bold ${stats?.health.orphanedMedia ? 'text-red-500' : 'text-[#1A2B48]'}`}>
-                  {stats?.health.orphanedMedia || 0}
-                </span>
-              </div>
-              <div className="w-full bg-[#FDFCF8] h-2 rounded-full overflow-hidden">
-                <div
-                  className={`h-full ${stats?.health.orphanedMedia ? 'bg-red-500' : 'bg-green-500'}`}
-                  style={{ width: stats?.health.orphanedMedia ? '100%' : '0%' }}
-                />
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-[#333333]/60">Featured Memories</span>
-                <span className="text-sm font-bold text-[#1A2B48]">{stats?.media ? 'Active' : 'None'}</span>
-              </div>
-            </div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl border border-[#D4AF37]/20 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-[#D4AF37]/10 bg-[#FDFCF8] flex items-center justify-between">
-            <h2 className="font-playfair text-xl text-[#1A2B48]">Content Distribution</h2>
+            <h2 className="font-playfair text-xl text-[#1A2B48]">Distribution</h2>
             <MessageSquare className="w-5 h-5 text-[#D4AF37]" />
           </div>
           <div className="p-6">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-[#333333]/60">Total Messages</span>
+                <span className="text-sm text-[#333333]/60">Total Memories</span>
                 <span className="text-sm font-bold text-[#1A2B48]">{stats?.messages || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-[#333333]/60">Avg. Media per Event</span>
-                <span className="text-sm font-bold text-[#1A2B48]">
-                  {stats?.events ? (stats.media / stats.events).toFixed(1) : 0}
-                </span>
               </div>
             </div>
           </div>

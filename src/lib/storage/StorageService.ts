@@ -1,4 +1,6 @@
-export type MediaCategory = 'photos' | 'videos' | 'documents' | 'memes';
+import { LocalStorageProvider } from './LocalStorageProvider';
+
+export type MediaCategory = 'people' | 'events' | 'gallery' | 'documents' | 'memes';
 
 export interface StorageProvider {
   uploadFile(file: Buffer, path: string, mimeType: string): Promise<string>;
@@ -9,19 +11,27 @@ export interface StorageProvider {
 export class StorageService {
   private provider: StorageProvider;
 
-  constructor(provider: StorageProvider) {
-    this.provider = provider;
+  constructor(provider?: StorageProvider) {
+    // Default to LocalStorageProvider for now
+    this.provider = provider || new LocalStorageProvider();
   }
 
-  async uploadMemoryMedia(
+  async uploadMedia(
     file: Buffer,
     fileName: string,
     category: MediaCategory,
-    eventId: string
+    subFolder?: string
   ): Promise<string> {
     const timestamp = Date.now();
-    const path = `memories/${category}/${eventId}/${timestamp}-${fileName}`;
-    return this.provider.uploadFile(file, path, this.getMimeType(fileName));
+    const sanitizedFileName = this.sanitizeFileName(fileName);
+    const folder = subFolder ? `${category}/${subFolder}` : category;
+    const filePath = `uploads/${folder}/${timestamp}-${sanitizedFileName}`;
+
+    return this.provider.uploadFile(file, filePath, this.getMimeType(fileName));
+  }
+
+  private sanitizeFileName(fileName: string): string {
+    return fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
   }
 
   private getMimeType(fileName: string): string {
@@ -30,6 +40,8 @@ export class StorageService {
       case 'jpg':
       case 'jpeg': return 'image/jpeg';
       case 'png': return 'image/png';
+      case 'gif': return 'image/gif';
+      case 'webp': return 'image/webp';
       case 'mp4': return 'video/mp4';
       case 'pdf': return 'application/pdf';
       default: return 'application/octet-stream';
@@ -37,16 +49,5 @@ export class StorageService {
   }
 }
 
-// Example S3 Provider Implementation (Skeleton)
-export class S3StorageProvider implements StorageProvider {
-  async uploadFile(file: Buffer, path: string, mimeType: string): Promise<string> {
-    // S3/R2 upload logic here
-    return `https://storage.provider.com/${path}`;
-  }
-  async getSignedUrl(path: string): Promise<string> {
-    return `https://storage.provider.com/${path}?token=...`;
-  }
-  async deleteFile(path: string): Promise<void> {
-    // delete logic
-  }
-}
+// Export a singleton instance
+export const storageService = new StorageService();

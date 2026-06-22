@@ -5,9 +5,7 @@ export async function GET() {
   try {
     const batches = await prisma.batch.findMany({
       include: {
-        _count: {
-          select: { events: true, people: true }
-        }
+        _count: { select: { events: true, people: true } }
       },
       orderBy: { createdAt: 'desc' }
     });

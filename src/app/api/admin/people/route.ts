@@ -26,7 +26,10 @@ export async function POST(request: Request) {
       major,
       graduationYear,
       yearbookQuote,
-      batchId
+      batchId,
+      image,
+      featured,
+      displayOrder
     } = body;
 
     if (!name || !slug || !batchId) {
@@ -41,12 +44,16 @@ export async function POST(request: Request) {
         major,
         graduationYear: graduationYear ? parseInt(graduationYear) : null,
         yearbookQuote,
-        batchId
+        batchId,
+        image,
+        featured: featured || false,
+        displayOrder: displayOrder ? parseInt(displayOrder) : 0
       }
     });
 
     return NextResponse.json(person);
   } catch (error) {
+    console.error('Failed to create person:', error);
     return NextResponse.json({ error: 'Failed to create person' }, { status: 500 });
   }
 }
