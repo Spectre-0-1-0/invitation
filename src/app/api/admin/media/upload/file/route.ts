@@ -1,94 +1,77 @@
 import { NextResponse } from 'next/server';
+import { storageService, MediaCategory } from '@/lib/storage/StorageService';
 import { prisma } from '@/lib/prisma';
-import { uploadFile, getBucketFromMimeType } from '@/lib/supabase-storage';
-import { inngest } from '@/inngest/client';
-import crypto from 'crypto';
 
 export async function POST(request: Request) {
-  let currentUploadId: string | null = null;
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const category = (formData.get('category') as MediaCategory) || 'gallery';
     const eventId = formData.get('eventId') as string;
-    const uploadId = formData.get('uploadId') as string;
-    const isZip = formData.get('isZip') === 'true';
-    currentUploadId = uploadId;
+    const uploadId = formData.get('uploadId') as string; // uploadSessionId
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
 
-    if (!file || !eventId) {
-      return NextResponse.json({ error: 'Missing file or eventId' }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+    }
+
+    // Basic validation
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'application/pdf', 'application/zip', 'application/x-zip-compressed'
+    ];
+    if (!allowedTypes.includes(file.type) && !file.name.endsWith('.zip')) {
+      return NextResponse.json({ error: `Unsupported file type: ${file.type}` }, { status: 400 });
+    }
+
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      return NextResponse.json({ error: 'File too large (max 50MB)' }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    const fileUrl = await storageService.uploadMedia(
+      buffer,
+      file.name,
+      category,
+      eventId
+    );
 
-    // Duplication Prevention: Checksum
-    const checksum = crypto.createHash('md5').update(buffer).digest('hex');
-    const existing = await prisma.media.findFirst({
-      where: { checksum, eventId }
-    });
+    // If eventId is provided, create a Media record automatically
+    let mediaRecord = null;
+    if (eventId) {
+      mediaRecord = await prisma.media.create({
+        data: {
+          url: fileUrl,
+          type: file.type.startsWith('video') ? 'VIDEO' : (file.type.includes('pdf') ? 'DOCUMENT' : 'PHOTO'),
+          category: category,
+          title: title || file.name,
+          description: description,
+          eventId: eventId,
+          uploadSessionId: uploadId || undefined,
+        },
+      });
 
-    if (existing && !isZip) {
+      // Update upload session progress if applicable
       if (uploadId) {
         await prisma.uploadSession.update({
           where: { id: uploadId },
-          data: { successCount: { increment: 1 } }
+          data: {
+            successCount: { increment: 1 },
+            status: 'PROCESSING' // Or keep as is
+          }
         });
       }
-      return NextResponse.json({
-        status: 'duplicate',
-        url: existing.url,
-        mediaId: existing.id,
-        message: 'File already exists in this event.'
-      });
     }
 
-    const mimeType = file.type || 'application/octet-stream';
-    const bucket = getBucketFromMimeType(mimeType, file.name);
-
-    const path = `uploads/${uploadId || 'direct'}/${Date.now()}-${file.name}`;
-    const publicUrl = await uploadFile(buffer, bucket, path, mimeType);
-
-    if (isZip) {
-      await inngest.send({
-        name: 'media/zip.uploaded',
-        data: {
-          uploadId,
-          zipUrl: publicUrl,
-          eventId
-        }
-      });
-
-      return NextResponse.json({ status: 'processing_zip', url: publicUrl });
-    } else {
-      const media = await prisma.media.create({
-        data: {
-          url: publicUrl,
-          type: bucket.toUpperCase().replace(/S$/, '') as any,
-          originalName: file.name,
-          mimeType,
-          eventId,
-          uploadSessionId: uploadId || null,
-          status: 'QUEUED',
-          checksum
-        }
-      });
-
-      await inngest.send({
-        name: 'media/upload.created',
-        data: {
-          mediaId: media.id
-        }
-      });
-
-      return NextResponse.json({ status: 'queued', url: publicUrl, mediaId: media.id });
-    }
+    return NextResponse.json({
+      success: true,
+      url: fileUrl,
+      media: mediaRecord,
+    });
   } catch (error: any) {
-    console.error('File upload failed:', error);
-    if (currentUploadId) {
-        await prisma.uploadSession.update({
-          where: { id: currentUploadId },
-          data: { failureCount: { increment: 1 } }
-        });
-    }
+    console.error('Upload API error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

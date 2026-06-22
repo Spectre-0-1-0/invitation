@@ -11,9 +11,14 @@ import {
   GraduationCap,
   Quote,
   Calendar,
-  Layers
+  Layers,
+  Star,
+  ArrowUpDown,
+  Trash2
 } from 'lucide-react';
 import { Slideover } from '@/components/admin/ui/Slideover';
+import { SingleImageUploader } from '@/components/admin/SingleImageUploader';
+import Image from 'next/image';
 
 interface Person {
   id: string;
@@ -23,6 +28,9 @@ interface Person {
   major?: string;
   graduationYear?: number;
   yearbookQuote?: string;
+  image?: string;
+  featured: boolean;
+  displayOrder: number;
   batchId: string;
   batch?: { name: string };
   _count: {
@@ -36,15 +44,9 @@ interface Batch {
   name: string;
 }
 
-interface Event {
-  id: string;
-  title: string;
-}
-
 export default function PeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSlideoverOpen, setIsSlideoverOpen] = useState(false);
   const [currentPerson, setCurrentPerson] = useState<Person | null>(null);
@@ -58,26 +60,24 @@ export default function PeoplePage() {
     graduationYear: new Date().getFullYear().toString(),
     yearbookQuote: '',
     batchId: '',
+    image: '',
+    featured: false,
+    displayOrder: '0',
     eventIds: [] as string[]
   });
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [peopleRes, batchesRes, eventsRes] = await Promise.all([
+      const [peopleRes, batchesRes] = await Promise.all([
         fetch('/api/admin/people'),
-        fetch('/api/admin/batches'),
-        fetch('/api/admin/events')
+        fetch('/api/admin/batches')
       ]);
-      const [peopleData, batchesData, eventsData] = await Promise.all([
-        peopleRes.json(),
-        batchesRes.json(),
-        eventsRes.json()
-      ]);
+      const peopleData = await peopleRes.json();
+      const batchesData = await batchesRes.json();
 
       if (Array.isArray(peopleData)) setPeople(peopleData);
       if (Array.isArray(batchesData)) setBatches(batchesData);
-      if (Array.isArray(eventsData)) setEvents(eventsData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -88,15 +88,6 @@ export default function PeoplePage() {
   useEffect(() => {
     fetchData();
   }, []);
-
-  useEffect(() => {
-    if (!currentPerson && formData.name) {
-      setFormData(prev => ({
-        ...prev,
-        slug: prev.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-      }));
-    }
-  }, [formData.name, currentPerson]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,6 +117,20 @@ export default function PeoplePage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!currentPerson || !confirm('Are you sure you want to delete this profile? This action cannot be undone.')) return;
+
+    try {
+      const res = await fetch(`/api/admin/people/${currentPerson.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setIsSlideoverOpen(false);
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Error deleting person:', error);
+    }
+  };
+
   const openCreate = () => {
     setCurrentPerson(null);
     setFormData({
@@ -136,6 +141,9 @@ export default function PeoplePage() {
       graduationYear: new Date().getFullYear().toString(),
       yearbookQuote: '',
       batchId: batches[0]?.id || '',
+      image: '',
+      featured: false,
+      displayOrder: '0',
       eventIds: []
     });
     setIsSlideoverOpen(true);
@@ -151,7 +159,10 @@ export default function PeoplePage() {
       graduationYear: person.graduationYear?.toString() || '',
       yearbookQuote: person.yearbookQuote || '',
       batchId: person.batchId,
-      eventIds: [] // This would ideally be fetched with person detail
+      image: person.image || '',
+      featured: person.featured,
+      displayOrder: person.displayOrder.toString(),
+      eventIds: []
     });
     setIsSlideoverOpen(true);
   };
@@ -207,13 +218,20 @@ export default function PeoplePage() {
               key={person.id}
               className="bg-white p-6 rounded-2xl border border-[#D4AF37]/20 shadow-sm hover:shadow-md transition-all flex items-start space-x-4 group"
             >
-              <div className="w-16 h-16 rounded-full bg-[#1A2B48]/5 flex items-center justify-center flex-shrink-0 border border-[#D4AF37]/10">
-                <User className="w-8 h-8 text-[#1A2B48]/20" />
+              <div className="w-16 h-16 rounded-full bg-[#1A2B48]/5 flex items-center justify-center flex-shrink-0 border border-[#D4AF37]/10 overflow-hidden">
+                {person.image ? (
+                  <Image src={person.image} alt={person.name} width={64} height={64} className="object-cover w-full h-full" />
+                ) : (
+                  <User className="w-8 h-8 text-[#1A2B48]/20" />
+                )}
               </div>
               <div className="flex-1">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-playfair text-xl text-[#1A2B48]">{person.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-playfair text-xl text-[#1A2B48]">{person.name}</h3>
+                      {person.featured && <Star className="w-3 h-3 text-[#D4AF37] fill-[#D4AF37]" />}
+                    </div>
                     <p className="text-xs text-[#333333]/40">{person.major} • {person.batch?.name}</p>
                   </div>
                   <button
@@ -247,6 +265,40 @@ export default function PeoplePage() {
       >
         <form onSubmit={handleSubmit} className="space-y-6 pb-24">
           <div className="space-y-6">
+            <div className="flex flex-col items-center mb-8">
+              <label className="block text-sm font-medium text-[#1A2B48] mb-4 font-serif">Profile Photo</label>
+              <SingleImageUploader
+                currentImageUrl={formData.image}
+                category="people"
+                onUploadComplete={(url) => setFormData({ ...formData, image: url })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div
+                onClick={() => setFormData({ ...formData, featured: !formData.featured })}
+                className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col items-center text-center ${
+                  formData.featured ? 'border-[#D4AF37] bg-[#D4AF37]/5' : 'border-[#1A2B48]/5 bg-white'
+                }`}
+              >
+                <Star className={`w-6 h-6 mb-2 ${formData.featured ? 'text-[#D4AF37] fill-[#D4AF37]' : 'text-[#333333]/20'}`} />
+                <span className="text-xs font-bold uppercase tracking-widest text-[#1A2B48]">Featured</span>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#1A2B48]/40 mb-2">Display Order</label>
+                <div className="flex items-center space-x-2 bg-[#FDFCF8] border border-[#1A2B48]/10 rounded px-3 py-2">
+                   <ArrowUpDown className="w-4 h-4 text-[#D4AF37]" />
+                   <input
+                    type="number"
+                    value={formData.displayOrder}
+                    onChange={(e) => setFormData({ ...formData, displayOrder: e.target.value })}
+                    className="bg-transparent w-full outline-none font-serif text-lg"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-[#1A2B48] mb-2 font-serif">Batch</label>
               <select
@@ -270,6 +322,18 @@ export default function PeoplePage() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-4 py-3 bg-[#FDFCF8] border border-[#1A2B48]/10 rounded focus:ring-2 focus:ring-[#D4AF37] outline-none font-serif"
                 placeholder="e.g. John Doe"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#1A2B48] mb-2 font-serif">Slug (URL friendly)</label>
+              <input
+                type="text"
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                className="w-full px-4 py-3 bg-[#FDFCF8] border border-[#1A2B48]/10 rounded focus:ring-2 focus:ring-[#D4AF37] outline-none font-mono text-sm"
+                placeholder="john-doe"
                 required
               />
             </div>
@@ -319,6 +383,17 @@ export default function PeoplePage() {
                 rows={3}
               />
             </div>
+
+            {currentPerson && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="w-full flex items-center justify-center space-x-2 text-red-500 text-sm font-medium pt-8 hover:text-red-600 transition-colors border-t border-[#D4AF37]/10"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete Profile Forever</span>
+              </button>
+            )}
           </div>
 
           <div className="fixed bottom-0 right-0 left-0 p-6 bg-[#FDFCF8] border-t border-[#D4AF37]/10 max-w-md ml-auto">

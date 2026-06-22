@@ -3,7 +3,12 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   const { passcode } = await request.json();
-  const adminSecret = process.env.ADMIN_SECRET || 'memory2025'; // Fallback for dev
+  const adminSecret = process.env.ADMIN_SECRET;
+
+  if (!adminSecret) {
+    console.error('CRITICAL: ADMIN_SECRET environment variable is not set.');
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+  }
 
   if (passcode === adminSecret) {
     const cookieStore = await cookies();

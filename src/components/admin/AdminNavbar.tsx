@@ -29,7 +29,7 @@ const navItems = [
   { name: 'Events', href: '/admin/events', icon: Calendar },
   { name: 'People', href: '/admin/people', icon: Users },
   { name: 'Media', href: '/admin/media', icon: ImageIcon },
-  { name: 'Messages', href: '/admin/messages', icon: MessageSquare },
+  { name: 'Messages', href: '/admin/memories', icon: MessageSquare },
 ];
 
 export function AdminNavbar() {

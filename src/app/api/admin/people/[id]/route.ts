@@ -33,13 +33,14 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { graduationYear, eventIds, ...rest } = body;
+    const { graduationYear, displayOrder, eventIds, ...rest } = body;
 
     const person = await prisma.person.update({
       where: { id },
       data: {
         ...rest,
         graduationYear: graduationYear ? parseInt(graduationYear) : undefined,
+        displayOrder: displayOrder ? parseInt(displayOrder) : undefined,
         events: eventIds ? {
           set: eventIds.map((id: string) => ({ id }))
         } : undefined
@@ -48,6 +49,7 @@ export async function PATCH(
 
     return NextResponse.json(person);
   } catch (error) {
+    console.error('Failed to update person:', error);
     return NextResponse.json({ error: 'Failed to update person' }, { status: 500 });
   }
 }

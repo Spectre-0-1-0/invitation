@@ -32,7 +32,12 @@ async function withFallback<T>(dbQuery: () => Promise<T>, fallback: T): Promise<
 export async function getSeniors(): Promise<Senior[]> {
   return withFallback(async () => {
     const people = await prisma.person.findMany({
-      include: { batch: true }
+      include: { batch: true },
+      orderBy: [
+        { featured: 'desc' },
+        { displayOrder: 'asc' },
+        { name: 'asc' }
+      ]
     });
     return people.map(p => ({
       id: p.slug,
@@ -42,6 +47,7 @@ export async function getSeniors(): Promise<Senior[]> {
       graduationYear: p.graduationYear || 2025,
       quote: p.yearbookQuote || '',
       image: p.image || '',
+      featured: p.featured,
       achievements: [] as string[],
       memoryHighlights: [] as string[],
       socialLinks: {}
@@ -64,6 +70,7 @@ export async function getSeniorBySlug(slug: string): Promise<Senior | undefined>
       graduationYear: p.graduationYear || 2025,
       quote: p.yearbookQuote || '',
       image: p.image || '',
+      featured: p.featured,
       achievements: [] as string[],
       memoryHighlights: [] as string[],
       socialLinks: {}
@@ -74,7 +81,8 @@ export async function getSeniorBySlug(slug: string): Promise<Senior | undefined>
 export async function getMemories(): Promise<Memory[]> {
   return withFallback(async () => {
     const media = await prisma.media.findMany({
-      include: { taggedPeople: true }
+      include: { taggedPeople: true },
+      orderBy: { createdAt: 'desc' }
     });
     return media.map(m => ({
       id: m.id,
@@ -100,7 +108,8 @@ export async function getMemoriesBySenior(seniorSlug: string): Promise<Memory[]>
           some: { slug: seniorSlug }
         }
       },
-      include: { taggedPeople: true }
+      include: { taggedPeople: true },
+      orderBy: { createdAt: 'desc' }
     });
     return media.map(m => ({
       id: m.id,
@@ -153,7 +162,8 @@ export async function getMessages(): Promise<Message[]> {
 export async function getMemes(): Promise<Meme[]> {
   return withFallback(async () => {
     const memes = await prisma.media.findMany({
-      where: { type: 'MEME' }
+      where: { type: 'MEME' },
+      orderBy: { createdAt: 'desc' }
     });
     return memes.map(m => ({
       id: m.id,
@@ -167,7 +177,8 @@ export async function getMemes(): Promise<Meme[]> {
 export async function getAlbums(): Promise<GalleryAlbum[]> {
   return withFallback(async () => {
     const events = await prisma.event.findMany({
-      include: { media: { select: { id: true } } }
+      include: { media: { select: { id: true } } },
+      orderBy: { date: 'desc' }
     });
     return events.map(e => ({
       id: e.slug,
@@ -184,9 +195,3 @@ export async function getAchievements(): Promise<Achievement[]> {
     return [] as Achievement[];
   }, achievementsData as Achievement[]);
 }
-
-/**
- * PRODUCTION MEDIA INTEGRATION
- * Uploaded media automatically appears in public pages via the database queries above.
- * No manual synchronization is required as the data-fetcher prioritizes DB results.
- */

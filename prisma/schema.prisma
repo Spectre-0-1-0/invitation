@@ -53,6 +53,8 @@ model Person {
   graduationYear         Int?
   yearbookQuote          String?
   image                  String?
+  featured               Boolean   @default(false)
+  displayOrder           Int       @default(0)
   signatureMomentMediaId String?
   signatureMomentText    String?
   createdAt              DateTime  @default(now())
@@ -125,7 +127,7 @@ model Media {
   updatedAt    DateTime         @updatedAt
 
   eventId      String
-  event        Event            @relation("EventMedia", fields: [eventId], references: [id])
+  event         Event            @relation("EventMedia", fields: [eventId], references: [id])
 
   uploadSessionId String?
   uploadSession   UploadSession? @relation(fields: [uploadSessionId], references: [id])

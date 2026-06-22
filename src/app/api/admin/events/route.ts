@@ -5,10 +5,8 @@ export async function GET() {
   try {
     const events = await prisma.event.findMany({
       include: {
-        batch: true,
-        _count: {
-          select: { media: true, participants: true }
-        }
+        batch: { select: { name: true } },
+        _count: { select: { media: true, participants: true } }
       },
       orderBy: { date: 'desc' }
     });
@@ -21,18 +19,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const {
-      title,
-      slug,
-      description,
-      date,
-      location,
-      batchId,
-      chapterQuote,
-      chapterMood,
-      chapterColorTheme,
-      featured
-    } = body;
+    const { title, slug, batchId, date, location, chapterQuote, featured } = body;
 
     if (!title || !slug || !batchId) {
       return NextResponse.json({ error: 'Title, slug, and batch are required' }, { status: 400 });
@@ -42,20 +29,16 @@ export async function POST(request: Request) {
       data: {
         title,
         slug,
-        description,
+        batchId,
         date: date ? new Date(date) : null,
         location,
-        batchId,
         chapterQuote,
-        chapterMood,
-        chapterColorTheme,
         featured: featured || false
       }
     });
 
     return NextResponse.json(event);
   } catch (error) {
-    console.error('Create event error:', error);
     return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
   }
 }

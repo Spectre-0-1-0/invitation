@@ -4,31 +4,29 @@ import { useState, useEffect } from 'react';
 import {
   Plus,
   Edit2,
-  Archive,
-  Trash2,
   Calendar,
-  Loader2,
-  Star,
   MapPin,
-  Tag,
-  Layers,
+  Star,
   Search,
-  Filter
+  Filter,
+  Loader2,
+  Trash2,
+  Archive
 } from 'lucide-react';
 import { Slideover } from '@/components/admin/ui/Slideover';
 
 interface Event {
   id: string;
-  title: string;
   slug: string;
-  date: string;
-  location: string;
+  title: string;
+  description?: string;
+  date?: string;
+  location?: string;
+  chapterQuote?: string;
   featured: boolean;
   isArchived: boolean;
   batchId: string;
   batch?: { name: string };
-  chapterQuote?: string;
-  chapterMood?: string;
   _count: {
     media: number;
     participants: number;
@@ -54,10 +52,10 @@ export default function EventsPage() {
     description: '',
     date: '',
     location: '',
-    batchId: '',
     chapterQuote: '',
-    chapterMood: '',
-    featured: false
+    batchId: '',
+    featured: false,
+    isArchived: false
   });
 
   const fetchData = async () => {
@@ -82,16 +80,6 @@ export default function EventsPage() {
   useEffect(() => {
     fetchData();
   }, []);
-
-  useEffect(() => {
-    // Auto-generate slug from title
-    if (!currentEvent && formData.title) {
-      setFormData(prev => ({
-        ...prev,
-        slug: prev.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-      }));
-    }
-  }, [formData.title, currentEvent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +109,20 @@ export default function EventsPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!currentEvent || !confirm('Are you sure you want to delete this event? This action cannot be undone.')) return;
+
+    try {
+      const res = await fetch(`/api/admin/events/${currentEvent.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setIsSlideoverOpen(false);
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
+    }
+  };
+
   const openCreate = () => {
     setCurrentEvent(null);
     setFormData({
@@ -129,10 +131,10 @@ export default function EventsPage() {
       description: '',
       date: '',
       location: '',
-      batchId: batches[0]?.id || '',
       chapterQuote: '',
-      chapterMood: '',
-      featured: false
+      batchId: batches[0]?.id || '',
+      featured: false,
+      isArchived: false
     });
     setIsSlideoverOpen(true);
   };
@@ -142,13 +144,13 @@ export default function EventsPage() {
     setFormData({
       title: event.title,
       slug: event.slug,
-      description: (event as any).description || '',
+      description: event.description || '',
       date: event.date ? new Date(event.date).toISOString().split('T')[0] : '',
       location: event.location || '',
-      batchId: event.batchId,
       chapterQuote: event.chapterQuote || '',
-      chapterMood: event.chapterMood || '',
-      featured: event.featured
+      batchId: event.batchId,
+      featured: event.featured,
+      isArchived: event.isArchived
     });
     setIsSlideoverOpen(true);
   };
@@ -158,7 +160,7 @@ export default function EventsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-playfair text-4xl text-[#1A2B48] mb-2">Events</h1>
-          <p className="text-[#333333]/60">Manage your archive&apos;s primary memory chapters.</p>
+          <p className="text-[#333333]/60">Organize memories into story chapters.</p>
         </div>
         <button
           onClick={openCreate}
@@ -177,12 +179,6 @@ export default function EventsPage() {
             placeholder="Search events..."
             className="w-full pl-10 pr-4 py-3 bg-white border border-[#D4AF37]/20 rounded-xl focus:ring-2 focus:ring-[#D4AF37] outline-none"
           />
-        </div>
-        <div className="flex gap-2">
-          <button className="flex items-center space-x-2 px-4 py-3 bg-white border border-[#D4AF37]/20 rounded-xl hover:bg-[#FDFCF8] transition-colors text-[#1A2B48]/60">
-            <Filter className="w-4 h-4" />
-            <span>Filter</span>
-          </button>
         </div>
       </div>
 
@@ -210,7 +206,6 @@ export default function EventsPage() {
               key={event.id}
               className={`bg-white rounded-2xl border border-[#D4AF37]/20 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col md:flex-row group ${event.isArchived ? 'opacity-60 grayscale' : ''}`}
             >
-              {/* Event Card Info */}
               <div className="flex-1 p-6 relative">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center space-x-2">
@@ -339,18 +334,38 @@ export default function EventsPage() {
               />
             </div>
 
-            <div className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                id="featured"
-                checked={formData.featured}
-                onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                className="w-5 h-5 text-[#1A2B48] border-[#D4AF37]/20 rounded focus:ring-[#D4AF37]"
-              />
-              <label htmlFor="featured" className="text-sm font-medium text-[#1A2B48] font-serif">
-                Feature on home page
-              </label>
+            <div className="grid grid-cols-2 gap-4">
+              <div
+                onClick={() => setFormData({ ...formData, featured: !formData.featured })}
+                className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col items-center text-center ${
+                  formData.featured ? 'border-[#D4AF37] bg-[#D4AF37]/5' : 'border-[#1A2B48]/5 bg-white'
+                }`}
+              >
+                <Star className={`w-6 h-6 mb-2 ${formData.featured ? 'text-[#D4AF37] fill-[#D4AF37]' : 'text-[#333333]/20'}`} />
+                <span className="text-xs font-bold uppercase tracking-widest text-[#1A2B48]">Featured</span>
+              </div>
+
+              <div
+                onClick={() => setFormData({ ...formData, isArchived: !formData.isArchived })}
+                className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col items-center text-center ${
+                  formData.isArchived ? 'border-[#1A2B48] bg-[#1A2B48]/5' : 'border-[#1A2B48]/5 bg-white'
+                }`}
+              >
+                <Archive className={`w-6 h-6 mb-2 ${formData.isArchived ? 'text-[#1A2B48]' : 'text-[#333333]/20'}`} />
+                <span className="text-xs font-bold uppercase tracking-widest text-[#1A2B48]">Archived</span>
+              </div>
             </div>
+
+            {currentEvent && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="w-full flex items-center justify-center space-x-2 text-red-500 text-sm font-medium pt-8 hover:text-red-600 transition-colors border-t border-[#D4AF37]/10"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete Event Forever</span>
+              </button>
+            )}
           </div>
 
           <div className="fixed bottom-0 right-0 left-0 p-6 bg-[#FDFCF8] border-t border-[#D4AF37]/10 max-w-md ml-auto">
