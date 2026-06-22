@@ -5,7 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Star } from "lucide-react";
 
-export function SeniorSpotlight({ senior }: { senior: Senior }) {
+export function SeniorSpotlight({ senior }: { senior: Senior | undefined }) {
+  if (!senior) {
+    return null;
+  }
+
   return (
     <Card variant="scrapbook" className="bg-heritage-navy text-white border-none p-1">
       <div className="p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">

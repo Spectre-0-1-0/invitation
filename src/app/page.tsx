@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 export default async function Home() {
   const memories = await getMemories();
   const seniors = await getSeniors();
-  const spotlightSenior = seniors[0];
+  const spotlightSenior = seniors && seniors.length > 0 ? seniors[0] : undefined;
 
   const previews = [
     {
@@ -108,17 +108,19 @@ export default async function Home() {
       </Section>
 
       {/* Senior Spotlight Section */}
-      <Section className="bg-white border-b border-parchment-muted overflow-hidden">
-        <Container>
-           <FadeIn>
-              <div className="mb-16">
-                 <span className="text-xs font-mono uppercase tracking-[0.3em] text-champagne-gold mb-2 block font-bold">Featured Story</span>
-                 <Heading level={2} className="text-4xl md:text-5xl">Moments of Impact</Heading>
-              </div>
-              <SeniorSpotlight senior={spotlightSenior} />
-           </FadeIn>
-        </Container>
-      </Section>
+      {spotlightSenior && (
+        <Section className="bg-white border-b border-parchment-muted overflow-hidden">
+          <Container>
+            <FadeIn>
+                <div className="mb-16">
+                  <span className="text-xs font-mono uppercase tracking-[0.3em] text-champagne-gold mb-2 block font-bold">Featured Story</span>
+                  <Heading level={2} className="text-4xl md:text-5xl">Moments of Impact</Heading>
+                </div>
+                <SeniorSpotlight senior={spotlightSenior} />
+            </FadeIn>
+          </Container>
+        </Section>
+      )}
 
       {/* Module Navigation Grid */}
       <Section variant="muted">
