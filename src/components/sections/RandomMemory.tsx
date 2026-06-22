@@ -12,6 +12,14 @@ import Image from 'next/image';
 export const RandomMemory: React.FC<{ memories: Memory[] }> = ({ memories }) => {
   const [randomMemory, setRandomMemory] = useState<Memory | null>(null);
 
+  if (!memories || memories.length === 0) {
+    return (
+      <div className="text-center p-12 bg-white/50 rounded-2xl border border-dashed border-parchment-dark/30">
+        <p className="text-charcoal-muted font-serif italic">The archive is waiting for its first stories...</p>
+      </div>
+    );
+  }
+
   const handleRandomize = () => {
     const randomIndex = Math.floor(Math.random() * memories.length);
     const selected = memories[randomIndex];
