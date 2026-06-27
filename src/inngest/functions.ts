@@ -1,9 +1,13 @@
+import { randomUUID } from "node:crypto";
 import { inngest } from "./client";
 import { prisma } from "@/lib/prisma";
-import { supabase } from "@/lib/supabase-storage";
+import { createClient } from "@supabase/supabase-js";
 import sharp from "sharp";
 import AdmZip from "adm-zip";
-import { getBucketFromMimeType } from "@/lib/supabase-storage";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const processMediaUpload = inngest.createFunction(
   { id: "process-media-upload" },
@@ -29,16 +33,24 @@ export const processMediaUpload = inngest.createFunction(
 
     try {
       const fileData = await step.run("download-file", async () => {
-        const urlParts = media.url.split("/storage/v1/object/public/");
-        if (urlParts.length < 2) throw new Error("Invalid Supabase URL");
+        // Parse Supabase URL to get bucket and path
+        const url = new URL(media.url);
+        const pathSegments = url.pathname.split('/');
+        const publicIndex = pathSegments.indexOf('public');
+        if (publicIndex === -1 || pathSegments.length <= publicIndex + 2) {
+            throw new Error("Invalid Supabase URL format");
+        }
 
-        const remaining = urlParts[1];
-        const bucket = remaining.substring(0, remaining.indexOf('/'));
-        const path = remaining.substring(remaining.indexOf('/') + 1);
+        const bucket = pathSegments[publicIndex + 1];
+        const path = pathSegments.slice(publicIndex + 2).join('/');
 
         const { data, error } = await supabase.storage.from(bucket).download(path);
         if (error) throw error;
-        return { buffer: Buffer.from(await data.arrayBuffer()).toString('base64') };
+        return {
+            buffer: Buffer.from(await data.arrayBuffer()).toString('base64'),
+            bucket,
+            path
+        };
       });
 
       const buffer = Buffer.from(fileData.buffer, 'base64');
@@ -53,14 +65,19 @@ export const processMediaUpload = inngest.createFunction(
             .webp({ quality: 80 })
             .toBuffer();
 
-          const thumbPath = `thumbnails/${media.id}.webp`;
+          // Put thumbnail in the same bucket but in a thumbnails folder
+          const pathParts = fileData.path.split('/');
+          const fileName = pathParts.pop();
+          const folderPath = pathParts.join('/');
+          const thumbPath = `${folderPath}/thumbnails/${fileName?.split('.')[0]}.webp`;
+
           const { data: thumbData, error: thumbError } = await supabase.storage
-            .from('photos')
+            .from(fileData.bucket)
             .upload(thumbPath, thumbBuffer, { contentType: 'image/webp', upsert: true });
 
           if (thumbError) throw thumbError;
 
-          const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(thumbData.path);
+          const { data: { publicUrl } } = supabase.storage.from(fileData.bucket).getPublicUrl(thumbData.path);
 
           return {
             thumbnailUrl: publicUrl,
@@ -119,23 +136,6 @@ export const processMediaUpload = inngest.createFunction(
           where: { id: mediaId },
           data: { status: "FAILED", errorMessage: err.message },
         });
-        if (media.uploadSessionId) {
-          const session = await prisma.uploadSession.findUnique({
-            where: { id: media.uploadSessionId! }
-          });
-          if (session) {
-            const newFailureCount = session.failureCount + 1;
-            const isFinished = session.successCount + newFailureCount >= session.fileCount;
-            await prisma.uploadSession.update({
-              where: { id: media.uploadSessionId! },
-              data: {
-                failureCount: newFailureCount,
-                status: isFinished ? "COMPLETED" : "PROCESSING",
-                completedAt: isFinished ? new Date() : null
-              }
-            });
-          }
-        }
       });
       throw err;
     }
@@ -149,10 +149,11 @@ export const processZipExtraction = inngest.createFunction(
     const { uploadId, zipUrl, eventId } = event.data;
 
     const zipData = await step.run("download-zip", async () => {
-      const urlParts = zipUrl.split("/storage/v1/object/public/");
-      const remaining = urlParts[1];
-      const bucket = remaining.substring(0, remaining.indexOf('/'));
-      const path = remaining.substring(remaining.indexOf('/') + 1);
+      const url = new URL(zipUrl);
+      const pathSegments = url.pathname.split('/');
+      const publicIndex = pathSegments.indexOf('public');
+      const bucket = pathSegments[publicIndex + 1];
+      const path = pathSegments.slice(publicIndex + 2).join('/');
 
       const { data, error } = await supabase.storage.from(bucket).download(path);
       if (error) throw error;
@@ -174,22 +175,26 @@ export const processZipExtraction = inngest.createFunction(
       await step.run(`process-entry-${entry.entryName}`, async () => {
         const buffer = entry.getData();
         const fileName = entry.entryName.split('/').pop() || entry.entryName;
-        const mimeType = getMimeTypeFromExt(fileName);
-        const targetBucket = getBucketFromMimeType(mimeType, fileName);
 
-        const targetPath = `uploads/${uploadId}/${Date.now()}-${fileName}`;
+        const bucket = 'gallery';
+        const uuid = randomUUID();
+        const ext = fileName.split('.').pop()?.toLowerCase() || '';
+        const targetPath = `${eventId || 'uncategorized'}/${uuid}${ext ? '.' + ext : ''}`;
+
+        const mimeType = getMimeTypeFromExt(fileName);
+
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from(targetBucket)
+          .from(bucket)
           .upload(targetPath, buffer, { contentType: mimeType, upsert: true });
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage.from(targetBucket).getPublicUrl(uploadData.path);
+        const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(uploadData.path);
 
         const media = await prisma.media.create({
           data: {
             url: publicUrl,
-            type: mapBucketToMediaType(targetBucket),
+            type: mimeType.startsWith('video') ? 'VIDEO' : (mimeType.includes('pdf') ? 'DOCUMENT' : 'PHOTO'),
             originalName: fileName,
             mimeType,
             eventId,
@@ -221,16 +226,5 @@ function getMimeTypeFromExt(fileName: string): string {
     case 'mov': return 'video/quicktime';
     case 'pdf': return 'application/pdf';
     default: return 'application/octet-stream';
-  }
-}
-
-function mapBucketToMediaType(bucket: string): any {
-  switch (bucket) {
-    case 'photos': return 'PHOTO';
-    case 'videos': return 'VIDEO';
-    case 'documents': return 'DOCUMENT';
-    case 'memes': return 'MEME';
-    case 'posters': return 'POSTER';
-    default: return 'PHOTO';
   }
 }

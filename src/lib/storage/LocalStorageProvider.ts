@@ -6,7 +6,7 @@ export class LocalStorageProvider implements StorageProvider {
   private baseDir: string;
 
   constructor() {
-    this.baseDir = path.join(process.cwd(), 'public');
+    this.baseDir = path.join(process.cwd(), 'public', 'uploads');
   }
 
   async uploadFile(file: Buffer, filePath: string, mimeType: string): Promise<string> {
@@ -20,17 +20,23 @@ export class LocalStorageProvider implements StorageProvider {
     await fs.writeFile(fullPath, file);
 
     // Return the public URL
-    return `/${filePath}`;
+    return `/uploads/${filePath}`;
   }
 
   async getSignedUrl(filePath: string): Promise<string> {
     // For local storage, the signed URL is just the public URL
-    return filePath.startsWith('/') ? filePath : `/${filePath}`;
+    return filePath.startsWith('/') ? filePath : `/uploads/${filePath}`;
   }
 
   async deleteFile(filePath: string): Promise<void> {
-    // Remove leading slash if present for path.join
-    const relativePath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+    // If it's a URL like /uploads/bucket/folder/file, strip /uploads/
+    let relativePath = filePath;
+    if (filePath.startsWith('/uploads/')) {
+      relativePath = filePath.substring('/uploads/'.length);
+    } else if (filePath.startsWith('uploads/')) {
+      relativePath = filePath.substring('uploads/'.length);
+    }
+
     const fullPath = path.join(this.baseDir, relativePath);
     try {
       await fs.unlink(fullPath);
