@@ -1,13 +1,28 @@
 import { Senior } from "@/types/archive";
 import { Heading } from "@/components/ui/Heading";
 import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/shared/EmptyState";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight, Star, UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export function SeniorSpotlight({ senior }: { senior: Senior | undefined }) {
   if (!senior) {
-    return null;
+    return (
+      <EmptyState
+        title="No featured seniors yet"
+        message="The class spotlight is waiting for its first story. Check back soon for student highlights."
+        icon={<Star size={40} className="text-champagne-gold" />}
+        action={
+          <Link href="/admin/people">
+            <Button variant="outline" size="sm" className="gap-2">
+              <UserPlus size={14} /> Add a Senior
+            </Button>
+          </Link>
+        }
+      />
+    );
   }
 
   return (
