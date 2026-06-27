@@ -1,6 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import { LocalStorageProvider } from './LocalStorageProvider';
+import { SupabaseStorageProvider } from './SupabaseStorageProvider';
 
-export type MediaCategory = 'people' | 'events' | 'gallery' | 'documents' | 'memes';
+// Business domain buckets
+export type MediaCategory = 'people' | 'events' | 'gallery' | 'documents' | 'memories' | 'general';
 
 export interface StorageProvider {
   uploadFile(file: Buffer, path: string, mimeType: string): Promise<string>;
@@ -11,9 +14,14 @@ export interface StorageProvider {
 export class StorageService {
   private provider: StorageProvider;
 
-  constructor(provider?: StorageProvider) {
-    // Default to LocalStorageProvider for now
-    this.provider = provider || new LocalStorageProvider();
+  constructor() {
+    const providerType = process.env.STORAGE_PROVIDER || 'local';
+
+    if (providerType === 'supabase') {
+      this.provider = new SupabaseStorageProvider();
+    } else {
+      this.provider = new LocalStorageProvider();
+    }
   }
 
   async uploadMedia(
@@ -22,16 +30,41 @@ export class StorageService {
     category: MediaCategory,
     subFolder?: string
   ): Promise<string> {
-    const timestamp = Date.now();
-    const sanitizedFileName = this.sanitizeFileName(fileName);
-    const folder = subFolder ? `${category}/${subFolder}` : category;
-    const filePath = `uploads/${folder}/${timestamp}-${sanitizedFileName}`;
+    const uuid = randomUUID();
+    const extension = fileName.split('.').pop()?.toLowerCase() || '';
+    const newFileName = `${uuid}${extension ? '.' + extension : ''}`;
+
+    // Determine internal folder structure within the bucket
+    let internalFolder = 'misc';
+    switch (category) {
+      case 'people':
+        internalFolder = 'profile';
+        break;
+      case 'events':
+        internalFolder = 'covers';
+        break;
+      case 'gallery':
+        internalFolder = subFolder || 'uncategorized';
+        break;
+      case 'memories':
+        internalFolder = 'attachments';
+        break;
+      case 'documents':
+        internalFolder = 'admin';
+        break;
+      case 'general':
+        internalFolder = 'misc';
+        break;
+    }
+
+    // Path format: bucket/folder/filename.ext
+    const filePath = `${category}/${internalFolder}/${newFileName}`;
 
     return this.provider.uploadFile(file, filePath, this.getMimeType(fileName));
   }
 
-  private sanitizeFileName(fileName: string): string {
-    return fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+  async deleteMedia(url: string): Promise<void> {
+    await this.provider.deleteFile(url);
   }
 
   private getMimeType(fileName: string): string {
@@ -44,10 +77,10 @@ export class StorageService {
       case 'webp': return 'image/webp';
       case 'mp4': return 'video/mp4';
       case 'pdf': return 'application/pdf';
+      case 'zip': return 'application/zip';
       default: return 'application/octet-stream';
     }
   }
 }
 
-// Export a singleton instance
 export const storageService = new StorageService();
