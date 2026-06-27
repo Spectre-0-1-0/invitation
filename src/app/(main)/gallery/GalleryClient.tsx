@@ -55,7 +55,7 @@ export default function GalleryClient({
             {initialAlbums.map((album, i) => (
               <FadeIn key={album.id} delay={i * 0.1}>
                 <Link
-                  href={`/gallery/event/${album.id}`}
+                  href={`/events/${album.id}`}
                   className="group block rounded-md focus:outline-none focus:ring-2 focus:ring-champagne-gold focus:ring-offset-8"
                   aria-label={`View collection: ${album.title}`}
                 >

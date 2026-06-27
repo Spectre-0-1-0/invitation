@@ -6,20 +6,20 @@ import { getSeniorBySlug, getMemoriesBySenior } from "@/lib/data-fetcher";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Instagram, Quote, ArrowLeft } from "lucide-react";
+import { Quote, ArrowLeft } from "lucide-react";
 
 export async function generateMetadata({ params }: any) {
   const { slug } = await params;
   const senior = await getSeniorBySlug(slug);
   return {
     title: senior?.name || "Senior Profile",
-    description: senior?.quote || `Profile for ${senior?.name}`,
+    description: senior?.yearbookQuote || `Profile for ${senior?.name}`,
   };
 }
 
 export default async function SeniorProfilePage({ params }: any) {
   const { slug } = await params;
-  const senior = await getSeniorBySlug(slug);
+  const senior: any = await getSeniorBySlug(slug);
   if (!senior) notFound();
 
   const memories = await getMemoriesBySenior(senior.id);
@@ -28,13 +28,13 @@ export default async function SeniorProfilePage({ params }: any) {
     <div className="flex flex-col">
       <Section className="pb-0 pt-20">
         <Container>
-          <Link href="/seniors" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-charcoal-muted hover:text-heritage-navy transition-colors">
-            <ArrowLeft size={14} /> Back to Seniors
+          <Link href="/people" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-charcoal-muted hover:text-heritage-navy transition-colors">
+            <ArrowLeft size={14} /> Back to Directory
           </Link>
 
           <div className="mt-12 grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-24 items-center">
             <div className="md:col-span-5 lg:col-span-4">
-              <div className="aspect-[4/5] rounded-md bg-parchment-muted border-8 border-white shadow-polaroid relative rotate-2">
+              <div className="aspect-[4/5] rounded-md bg-parchment-muted border-8 border-white shadow-polaroid relative rotate-2 overflow-hidden">
                 {senior.image && (
                   <Image
                     src={senior.image}
@@ -44,17 +44,6 @@ export default async function SeniorProfilePage({ params }: any) {
                     priority
                   />
                 )}
-                <div className="absolute top-4 right-4 flex gap-2">
-                   {senior.socialLinks?.instagram && (
-                     <a
-                       href={`https://instagram.com/${senior.socialLinks.instagram}`}
-                       className="p-2 bg-white/90 rounded-full text-heritage-navy hover:text-champagne-gold transition-colors shadow-sm"
-                       aria-label="Instagram Profile"
-                     >
-                       <Instagram size={18} />
-                     </a>
-                   )}
-                </div>
               </div>
             </div>
 
@@ -65,31 +54,24 @@ export default async function SeniorProfilePage({ params }: any) {
               <div className="mt-4 relative max-w-2xl">
                 <Quote className="absolute -left-10 -top-6 w-16 h-16 text-champagne-gold/10" aria-hidden="true" />
                 <p className="text-2xl md:text-4xl font-serif italic text-heritage-navy leading-relaxed relative z-10">
-                   &quot;{senior.quote}&quot;
+                   &quot;{senior.yearbookQuote || 'No quote archived.'}&quot;
                 </p>
               </div>
 
               <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 gap-12 border-t border-parchment-muted pt-12">
                 <div>
                   <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-champagne-gold mb-6 font-bold">Academic Journey</h3>
-                  <ul className="space-y-4">
-                    {senior.achievements.map((achievement, i) => (
-                      <li key={i} className="flex items-start gap-4">
-                        <div className="w-1.5 h-1.5 rounded-full bg-champagne-gold mt-2 flex-shrink-0" />
-                        <span className="text-sm text-charcoal leading-relaxed">{achievement}</span>
-                      </li>
-                    ))}
-                    {senior.achievements.length === 0 && (
-                       <li className="text-sm text-charcoal-muted italic">No specific achievements listed.</li>
-                    )}
-                  </ul>
+                   <div className="space-y-4 text-sm text-charcoal-muted">
+                     <p>Class of {senior.graduationYear || '2025'}</p>
+                     <p>{senior.major || 'Faculty of Arts & Sciences'}</p>
+                   </div>
                 </div>
 
                 <div>
                   <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-champagne-gold mb-6 font-bold">Class Identity</h3>
                   <div className="space-y-4 text-sm text-charcoal-muted font-mono uppercase tracking-widest">
-                     <p>Class of {senior.graduationYear}</p>
                      <p>{senior.nickname ? `Known as: "${senior.nickname}"` : 'Full Name Directory'}</p>
+                     <p>{senior.batch?.name || 'Class Archive'}</p>
                   </div>
                 </div>
               </div>
@@ -112,7 +94,7 @@ export default async function SeniorProfilePage({ params }: any) {
 
           {memories.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-              {memories.map((memory) => (
+              {memories.map((memory: any) => (
                 <Link
                   key={memory.id}
                   href={`/gallery/${memory.id}`}
@@ -122,7 +104,7 @@ export default async function SeniorProfilePage({ params }: any) {
                     <div className="aspect-video rounded-sm bg-parchment-muted overflow-hidden relative">
                        <Image
                          src={memory.url}
-                         alt=""
+                         alt={senior.name}
                          fill
                          className="object-cover"
                        />
@@ -130,11 +112,11 @@ export default async function SeniorProfilePage({ params }: any) {
                     </div>
                     <div className="p-4">
                       <div className="flex justify-between items-start mb-3">
-                        <Badge variant="outline" className="text-[9px] py-0 border-parchment-dark/30 uppercase tracking-widest">{memory.category}</Badge>
-                        <span className="text-[9px] font-mono text-charcoal-muted opacity-50">{new Date(memory.date).toLocaleDateString()}</span>
+                        <Badge variant="outline" className="text-[9px] py-0 border-parchment-dark/30 uppercase tracking-widest">{memory.category || memory.type}</Badge>
+                        <span className="text-[9px] font-mono text-charcoal-muted opacity-50">{new Date(memory.createdAt).toLocaleDateString()}</span>
                       </div>
                       <h4 className="font-serif text-xl text-heritage-navy group-hover:text-champagne-gold transition-colors leading-tight">
-                        {memory.title}
+                        {memory.title || 'Untitled Memory'}
                       </h4>
                     </div>
                   </div>

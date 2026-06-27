@@ -3,8 +3,9 @@ import { Section } from "@/components/layout/Section";
 import { Heading } from "@/components/ui/Heading";
 import { Badge } from "@/components/ui/Badge";
 import { FadeIn } from "@/components/animations/FadeIn";
-import { getAchievements, getSeniors } from "@/lib/data-fetcher";
+import { getSeniors } from "@/lib/data-fetcher";
 import { Trophy, Award, Star, Rocket, FlaskConical, Users, Medal } from "lucide-react";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 export const metadata = {
   title: "Excellence & Honors",
@@ -12,8 +13,19 @@ export const metadata = {
 };
 
 export default async function AchievementsPage() {
-  const achievements = await getAchievements();
   const seniors = await getSeniors();
+
+  // Aggregate achievements from seniors
+  // Casting to any to handle Prisma's dynamic return type in this context
+  const achievements = seniors.flatMap((senior: any) =>
+    (senior.achievements || []).map((text: string, i: number) => ({
+      id: `${senior.id}-ach-${i}`,
+      title: text,
+      recipientName: senior.name,
+      recipientSlug: senior.slug,
+      category: 'academic'
+    }))
+  );
 
   const getIcon = (category: string) => {
     switch (category) {
@@ -22,63 +34,54 @@ export default async function AchievementsPage() {
       case 'research': return <FlaskConical size={24} />;
       case 'club': return <Users size={24} />;
       case 'sports': return <Medal size={24} />;
-      default: return <Trophy size={24} />;
+      default: return <Star size={24} />;
     }
   };
 
   return (
     <Section className="pt-20">
       <Container>
-        <div className="flex flex-col items-center text-center mb-24">
+        <div className="flex flex-col items-center text-center mb-32">
           <FadeIn>
-            <span className="text-xs font-mono uppercase tracking-[0.3em] text-champagne-gold mb-6 block font-bold">The Hall of Fame</span>
-            <Heading level={1} className="text-5xl md:text-7xl mb-8">Excellence & <span className="italic font-light">Honors</span></Heading>
-            <p className="text-lg md:text-xl text-charcoal-muted max-w-2xl mx-auto font-serif italic">
-               Celebrating the hard-won victories, academic milestones, and outstanding
-               contributions that brought pride to the Class of 2025.
-            </p>
+             <div className="p-4 bg-champagne-gold text-white rounded-full mb-8 shadow-xl shadow-champagne-gold/20 inline-block">
+               <Trophy size={28} />
+             </div>
+             <Heading level={1} className="text-5xl md:text-7xl mb-8">Honors & <span className="italic font-light">Excellence</span></Heading>
+             <p className="text-lg md:text-xl text-charcoal-muted max-w-2xl mx-auto font-serif italic">
+                A celebration of individual triumphs and collective progress.
+                The milestones that marked our growth and dedication.
+             </p>
           </FadeIn>
         </div>
 
         {achievements.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto">
-            {achievements.map((achievement, i) => {
-              const recipient = seniors.find(s => s.id === achievement.recipientId);
-
-              return (
-                <FadeIn key={achievement.id} delay={i * 0.1}>
-                  <div className="p-10 border border-parchment-dark/30 bg-white shadow-scrapbook rounded-md flex flex-col md:flex-row gap-8 group hover:border-champagne-gold transition-all duration-500">
-                    <div className="p-5 bg-parchment-muted rounded-full h-fit w-fit text-heritage-navy group-hover:bg-heritage-navy group-hover:text-white transition-all duration-500 flex-shrink-0">
-                      {getIcon(achievement.category)}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start mb-4">
-                        <Badge variant="secondary" className="font-bold">{achievement.category}</Badge>
-                        <span className="text-[10px] font-mono text-charcoal-muted opacity-60 uppercase tracking-widest">{achievement.date}</span>
-                      </div>
-                      <h2 className="font-serif text-2xl text-heritage-navy mb-4 leading-tight group-hover:text-champagne-gold transition-colors">{achievement.title}</h2>
-                      <p className="text-sm text-charcoal-muted leading-relaxed mb-6 italic">
-                         {achievement.description}
-                      </p>
-                      <div className="pt-6 border-t border-parchment-muted flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-heritage-navy">
-                        <Star size={12} className="text-champagne-gold fill-champagne-gold" aria-hidden="true" />
-                        <span>Recipient: <span className="text-heritage-navy">{recipient?.name || achievement.recipientId}</span></span>
-                      </div>
+            {achievements.map((achievement, i) => (
+              <FadeIn key={achievement.id} delay={i * 0.1}>
+                <div className="bg-white p-10 rounded-md shadow-scrapbook border border-parchment-muted flex gap-8 items-start hover:border-champagne-gold transition-colors duration-500 group">
+                  <div className="p-4 bg-parchment-base text-champagne-gold rounded-lg group-hover:scale-110 transition-transform duration-500">
+                    {getIcon(achievement.category)}
+                  </div>
+                  <div>
+                    <Badge variant="outline" className="mb-4 text-[9px] uppercase tracking-widest border-parchment-dark/50">{achievement.category}</Badge>
+                    <h3 className="font-serif text-2xl text-heritage-navy mb-4 leading-tight">{achievement.title}</h3>
+                    <div className="flex items-center gap-2">
+                       <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-charcoal-muted">Recipient:</span>
+                       <span className="text-sm font-bold text-heritage-navy">{achievement.recipientName}</span>
                     </div>
                   </div>
-                </FadeIn>
-              );
-            })}
+                </div>
+              </FadeIn>
+            ))}
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto">
-             <FadeIn>
-               <div className="py-24 text-center border-2 border-dashed border-parchment-dark/20 rounded-xl bg-white/30">
-                  <Trophy size={48} className="mx-auto text-parchment-dark mb-6" />
-                  <p className="text-charcoal-muted font-serif italic text-lg">&quot;Excellence is a journey, and our hall of fame is still being written.&quot;</p>
-               </div>
-             </FadeIn>
-          </div>
+          <FadeIn>
+            <EmptyState
+              title="Excellence Unfolding"
+              message="The hall of fame is currently preparing its displays. Our achievements are being carefully archived."
+              icon={<Medal size={40} />}
+            />
+          </FadeIn>
         )}
       </Container>
     </Section>

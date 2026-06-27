@@ -3,7 +3,9 @@ import { Section } from "@/components/layout/Section";
 import { Heading } from "@/components/ui/Heading";
 import { Badge } from "@/components/ui/Badge";
 import { FadeIn } from "@/components/animations/FadeIn";
-import { getMessages, getSeniors } from "@/lib/data-fetcher";
+import { getSeniors } from "@/lib/data-fetcher";
+import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import { MessageSquareQuote, Heart, Laugh, Star, Send } from "lucide-react";
 import { EmptyState } from "@/components/shared/EmptyState";
 
@@ -12,11 +14,26 @@ export const metadata = {
   description: "A living collection of farewells, inside jokes, and heartfelt gratitude from the Class of 2025."
 };
 
+async function getMessages() {
+  try {
+    if (!process.env.DATABASE_URL) return [];
+    return await prisma.message.findMany({
+      include: {
+        person: { select: { name: true, id: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  } catch (error) {
+    logger.error("Failed to fetch messages", { data: error });
+    return [];
+  }
+}
+
 export default async function MessagesPage() {
   const messages = await getMessages();
   const seniors = await getSeniors();
 
-  const getCategoryIcon = (category: string) => {
+  const getCategoryIcon = (category: string | null) => {
     switch (category) {
       case 'funny': return <Laugh size={14} />;
       case 'thank-you': return <Heart size={14} />;
@@ -44,7 +61,7 @@ export default async function MessagesPage() {
         {messages.length > 0 ? (
           <div className="columns-1 md:columns-2 lg:columns-3 gap-10 space-y-10">
             {messages.map((message, i) => {
-              const target = message.targetId ? seniors.find(s => s.id === message.targetId) : null;
+              const target = message.person;
 
               return (
                 <FadeIn key={message.id} delay={i * 0.05}>
@@ -70,9 +87,6 @@ export default async function MessagesPage() {
                     <div className="mt-auto pt-8 border-t border-parchment-muted flex justify-between items-end">
                       <div>
                         <span className="block text-sm font-bold text-heritage-navy tracking-tight">{message.from}</span>
-                        {message.relationship && (
-                          <span className="block text-[10px] font-mono uppercase tracking-widest text-charcoal-muted mt-1 opacity-70">{message.relationship}</span>
-                        )}
                       </div>
                       <span className="text-[10px] font-mono text-charcoal-muted opacity-40 uppercase tracking-tighter">
                         {new Date(message.timestamp).getFullYear()}

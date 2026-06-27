@@ -2,14 +2,23 @@ import { Container } from "@/components/layout/Container";
 import { Section } from "@/components/layout/Section";
 import { Heading } from "@/components/ui/Heading";
 import { FadeIn } from "@/components/animations/FadeIn";
-import { getAlbums, getMemories } from "@/lib/data-fetcher";
+import { getEvents, getMemories } from "@/lib/data-fetcher";
 import GalleryClient from "./GalleryClient";
 
 export const metadata = { title: "Memory Gallery" };
 
 export default async function GalleryPage() {
-  const albums = await getAlbums();
+  const events = await getEvents();
   const memories = await getMemories();
+
+  // Map Events to GalleryAlbums
+  const albums = events.map(event => ({
+    id: event.slug,
+    title: event.title,
+    description: event.description || event.chapterQuote || undefined,
+    coverImage: event.media?.[0]?.url || '',
+    memoryIds: event.media?.map((m: any) => m.id) || []
+  }));
 
   return (
     <Section className="pt-20">
@@ -25,7 +34,7 @@ export default async function GalleryPage() {
           </FadeIn>
         </div>
 
-        <GalleryClient initialAlbums={albums} initialMemories={memories} />
+        <GalleryClient initialAlbums={albums as any} initialMemories={memories as any} />
       </Container>
     </Section>
   );

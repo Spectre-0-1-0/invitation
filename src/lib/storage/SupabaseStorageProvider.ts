@@ -1,27 +1,37 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { StorageProvider } from './StorageService';
+import { logger } from '../logger';
 
 export class SupabaseStorageProvider implements StorageProvider {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient | null = null;
 
   constructor() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase URL and Service Role Key are required for SupabaseStorageProvider');
+    // During build, environment variables might be missing.
+    // We should not throw in the constructor to avoid breaking the build.
+    if (supabaseUrl && supabaseKey) {
+      this.supabase = createClient(supabaseUrl, supabaseKey);
+    } else {
+      logger.warn('Supabase credentials missing. SupabaseStorageProvider will be inactive.');
     }
+  }
 
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+  private getClient(): SupabaseClient {
+    if (!this.supabase) {
+      throw new Error('SupabaseStorageProvider is not configured. Missing environment variables.');
+    }
+    return this.supabase;
   }
 
   async uploadFile(file: Buffer, filePath: string, mimeType: string): Promise<string> {
-    // Expected filePath format: "bucket/folder/filename.ext"
+    const client = this.getClient();
     const parts = filePath.split('/');
     const bucket = parts[0];
     const pathWithinBucket = parts.slice(1).join('/');
 
-    const { data, error } = await this.supabase.storage
+    const { data, error } = await client.storage
       .from(bucket)
       .upload(pathWithinBucket, file, {
         contentType: mimeType,
@@ -32,7 +42,7 @@ export class SupabaseStorageProvider implements StorageProvider {
       throw new Error(`Failed to upload to Supabase: ${error.message}`);
     }
 
-    const { data: { publicUrl } } = this.supabase.storage
+    const { data: { publicUrl } } = client.storage
       .from(bucket)
       .getPublicUrl(data.path);
 
@@ -40,11 +50,12 @@ export class SupabaseStorageProvider implements StorageProvider {
   }
 
   async getSignedUrl(filePath: string): Promise<string> {
+    const client = this.getClient();
     const parts = filePath.split('/');
     const bucket = parts[0];
     const pathWithinBucket = parts.slice(1).join('/');
 
-    const { data, error } = await this.supabase.storage
+    const { data, error } = await client.storage
       .from(bucket)
       .createSignedUrl(pathWithinBucket, 3600); // 1 hour
 
@@ -56,20 +67,13 @@ export class SupabaseStorageProvider implements StorageProvider {
   }
 
   async deleteFile(filePath: string): Promise<void> {
-    // If it's a full URL, we need to extract the path.
-    // However, the interface expects the same path format as uploadFile.
-    // If filePath is a URL from Supabase, we might need parsing.
-    // Let's assume for now the caller provides "bucket/path/to/file"
-
+    const client = this.getClient();
     let bucket: string;
     let pathWithinBucket: string;
 
     if (filePath.startsWith('http')) {
-        // Simple extraction from public URL: https://.../storage/v1/object/public/bucket/path/to/file
         const url = new URL(filePath);
         const pathSegments = url.pathname.split('/');
-        // Path matches /storage/v1/object/public/bucket/path...
-        // Index of 'public' is usually 5
         const publicIndex = pathSegments.indexOf('public');
         if (publicIndex !== -1 && pathSegments.length > publicIndex + 1) {
             bucket = pathSegments[publicIndex + 1];
@@ -83,12 +87,12 @@ export class SupabaseStorageProvider implements StorageProvider {
         pathWithinBucket = parts.slice(1).join('/');
     }
 
-    const { error } = await this.supabase.storage
+    const { error } = await client.storage
       .from(bucket)
       .remove([pathWithinBucket]);
 
     if (error) {
-      console.error(`Failed to delete from Supabase: ${error.message}`);
+      logger.error(`Failed to delete from Supabase: ${error.message}`);
     }
   }
 }
