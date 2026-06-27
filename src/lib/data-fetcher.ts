@@ -55,6 +55,12 @@ export async function getSeniors(): Promise<Senior[]> {
   }, seniorsData as Senior[]);
 }
 
+export async function getFeaturedSenior(): Promise<Senior | undefined> {
+  const seniors = await getSeniors();
+  if (!seniors || seniors.length === 0) return undefined;
+  return seniors[0];
+}
+
 export async function getSeniorBySlug(slug: string): Promise<Senior | undefined> {
   return withFallback(async () => {
     const p = await prisma.person.findUnique({

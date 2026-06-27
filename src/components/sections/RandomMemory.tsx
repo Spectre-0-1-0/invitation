@@ -2,21 +2,32 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Sparkles, RefreshCw } from 'lucide-react';
+import { Sparkles, RefreshCw, CameraOff, Plus } from 'lucide-react';
 import { trackDiscovery } from '@/lib/analytics';
 import { Memory } from '@/types/archive';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import Image from 'next/image';
+import { EmptyState } from '@/components/shared/EmptyState';
 
 export const RandomMemory: React.FC<{ memories: Memory[] }> = ({ memories }) => {
   const [randomMemory, setRandomMemory] = useState<Memory | null>(null);
 
   if (!memories || memories.length === 0) {
     return (
-      <div className="text-center p-12 bg-white/50 rounded-2xl border border-dashed border-parchment-dark/30">
-        <p className="text-charcoal-muted font-serif italic">The archive is waiting for its first stories...</p>
-      </div>
+      <EmptyState
+        title="No memories captured yet"
+        message="The archive is waiting for its first stories. Every photo and note adds to our shared legacy."
+        icon={<CameraOff size={40} className="text-burnt-sienna" />}
+        className="bg-white/50"
+        action={
+          <Link href="/admin/media">
+            <Button variant="outline" size="sm" className="gap-2">
+              <Plus size={14} /> Upload Memory
+            </Button>
+          </Link>
+        }
+      />
     );
   }
 
