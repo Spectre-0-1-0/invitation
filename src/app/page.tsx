@@ -101,7 +101,7 @@ export default async function Home() {
               </FadeIn>
            </div>
            <FadeIn delay={0.2}>
-              <RandomMemory memories={memories} />
+              <RandomMemory memories={memories as any || []} />
            </FadeIn>
         </Container>
       </Section>
@@ -114,7 +114,7 @@ export default async function Home() {
                 <span className="text-xs font-mono uppercase tracking-[0.3em] text-champagne-gold mb-2 block font-bold">Featured Story</span>
                 <Heading level={2} className="text-4xl md:text-5xl">Moments of Impact</Heading>
               </div>
-              <SeniorSpotlight senior={spotlightSenior} />
+              <SeniorSpotlight senior={spotlightSenior as any} />
           </FadeIn>
         </Container>
       </Section>

@@ -3,9 +3,10 @@ import { Section } from "@/components/layout/Section";
 import { Heading } from "@/components/ui/Heading";
 import { Badge } from "@/components/ui/Badge";
 import { FadeIn } from "@/components/animations/FadeIn";
-import { getTimeline } from "@/lib/data-fetcher";
+import { getEvents } from "@/lib/data-fetcher";
 import { Milestone, Compass, GraduationCap } from "lucide-react";
 import { EmptyState } from "@/components/shared/EmptyState";
+import Link from "next/link";
 
 export const metadata = {
   title: "The Timeline",
@@ -13,7 +14,7 @@ export const metadata = {
 };
 
 export default async function TimelinePage() {
-  const timeline = await getTimeline();
+  const events = await getEvents();
 
   return (
     <Section className="relative min-h-screen pt-20">
@@ -31,9 +32,9 @@ export default async function TimelinePage() {
            </FadeIn>
         </div>
 
-        {timeline.length > 0 ? (
+        {events.length > 0 ? (
           <div className="relative">
-            {timeline.map((event, index) => (
+            {events.map((event, index) => (
               <div
                 key={event.id}
                 className={`flex flex-col md:flex-row gap-8 items-center mb-32 md:mb-48 last:mb-0 ${
@@ -42,20 +43,22 @@ export default async function TimelinePage() {
               >
                 <div className="w-full md:w-[45%]">
                   <FadeIn direction={index % 2 === 0 ? "right" : "left"}>
-                    <div className="group relative">
+                    <Link href={`/events/${event.slug}`} className="group relative block">
                       <div className="absolute -inset-4 bg-champagne-gold/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity blur-xl" />
                       <div className="relative p-10 bg-white rounded-md shadow-scrapbook border border-parchment-muted overflow-hidden">
                          <div className="absolute top-0 left-0 w-2 h-full bg-heritage-navy opacity-10" />
-                         <Badge variant="secondary" className="mb-6 font-bold uppercase tracking-widest">{event.period}</Badge>
-                         <h2 className="font-serif text-3xl mb-6 text-heritage-navy leading-tight">{event.milestone}</h2>
-                         <p className="text-charcoal-muted leading-relaxed text-lg">{event.description}</p>
+                         <Badge variant="secondary" className="mb-6 font-bold uppercase tracking-widest">
+                           {event.date ? new Date(event.date).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : 'Milestone'}
+                         </Badge>
+                         <h2 className="font-serif text-3xl mb-6 text-heritage-navy leading-tight">{event.title}</h2>
+                         <p className="text-charcoal-muted leading-relaxed text-lg">{event.description || event.chapterQuote}</p>
                       </div>
-                    </div>
+                    </Link>
                   </FadeIn>
                 </div>
 
                 <div className="absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-heritage-navy border-8 border-parchment-base flex items-center justify-center text-white hidden md:flex z-20 shadow-xl">
-                   {event.importance === "major" ? <Milestone size={18} /> : <Compass size={18} />}
+                   {event.featured ? <Milestone size={18} /> : <Compass size={18} />}
                 </div>
 
                 <div className="hidden md:block md:w-[45%]" />

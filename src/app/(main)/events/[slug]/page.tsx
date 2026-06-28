@@ -2,7 +2,7 @@ import { Container } from "@/components/layout/Container";
 import { Section } from "@/components/layout/Section";
 import { Heading } from "@/components/ui/Heading";
 import { Badge } from "@/components/ui/Badge";
-import { getAlbums, getMemories } from "@/lib/data-fetcher";
+import { getEventBySlug } from "@/lib/data-fetcher";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,30 +11,27 @@ import EventTracking from "./EventTracking";
 
 export async function generateMetadata({ params }: any) {
   const { slug } = await params;
-  const albums = await getAlbums();
-  const album = albums.find(a => a.id === slug);
+  const event = await getEventBySlug(slug);
 
-  if (!album) return { title: "Event Not Found" };
+  if (!event) return { title: "Event Not Found" };
 
   return {
-    title: album.title,
-    description: album.description || `Memories from ${album.title}`,
+    title: event.title,
+    description: event.description || event.chapterQuote || `Memories from ${event.title}`,
   };
 }
 
 export default async function EventDetailPage({ params }: any) {
   const { slug } = await params;
-  const albums = await getAlbums();
-  const album = albums.find(a => a.id === slug);
+  const event = await getEventBySlug(slug);
 
-  if (!album) notFound();
+  if (!event) notFound();
 
-  const allMemories = await getMemories();
-  const eventMemories = allMemories.filter(m => album.memoryIds.includes(m.id));
+  const eventMemories = event.media || [];
 
   return (
     <div className="flex flex-col">
-      <EventTracking slug={slug} title={album.title} />
+      <EventTracking slug={slug} title={event.title} />
       <Section className="pb-0 pt-20">
         <Container>
           <Link href="/gallery" className="text-xs font-bold uppercase tracking-widest text-charcoal-muted hover:text-heritage-navy transition-colors">
@@ -43,17 +40,17 @@ export default async function EventDetailPage({ params }: any) {
 
           <div className="mt-12 text-center max-w-3xl mx-auto mb-20">
             <Badge variant="outline" className="mb-6 uppercase tracking-widest">Event Collection</Badge>
-            <Heading level={1} className="text-5xl md:text-7xl mb-8">{album.title}</Heading>
-            {album.description && (
+            <Heading level={1} className="text-5xl md:text-7xl mb-8">{event.title}</Heading>
+            {(event.description || event.chapterQuote) && (
               <p className="text-xl text-charcoal-muted font-serif italic leading-relaxed">
-                &quot;{album.description}&quot;
+                &quot;{event.description || event.chapterQuote}&quot;
               </p>
             )}
 
             <div className="mt-10 flex flex-wrap justify-center gap-8 text-sm font-mono text-charcoal-muted border-t border-parchment-muted pt-8">
                <div className="flex items-center gap-2">
                  <Calendar size={14} className="text-champagne-gold" />
-                 <span>Class of 2025</span>
+                 <span>{event.date ? new Date(event.date).toLocaleDateString() : 'Class of 2025'}</span>
                </div>
                <div className="flex items-center gap-2">
                  <Camera size={14} className="text-champagne-gold" />
@@ -74,7 +71,7 @@ export default async function EventDetailPage({ params }: any) {
                     <div className="aspect-square bg-parchment-muted overflow-hidden relative rounded-sm">
                        <Image
                          src={memory.url}
-                         alt=""
+                         alt={memory.title || event.title}
                          fill
                          className="object-cover"
                        />
@@ -82,7 +79,7 @@ export default async function EventDetailPage({ params }: any) {
                     </div>
                     <div className="mt-4 px-2 pb-2">
                       <h4 className="font-serif text-lg text-heritage-navy group-hover:text-champagne-gold transition-colors">
-                        {memory.title}
+                        {memory.title || 'Untitled Memory'}
                       </h4>
                     </div>
                   </div>

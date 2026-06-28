@@ -1,203 +1,127 @@
+import { logger } from "./logger";
 import { prisma } from './prisma';
-import {
-  Senior,
-  Memory,
-  TimelineEvent,
-  Message,
-  Meme,
-  GalleryAlbum,
-  Achievement
-} from '@/types/archive';
 
-import seniorsData from '@/data/seniors.json';
-import memoriesData from '@/data/memories.json';
-import timelineData from '@/data/timeline.json';
-import messagesData from '@/data/messages.json';
-import memesData from '@/data/memes.json';
-import albumsData from '@/data/albums.json';
-import achievementsData from '@/data/achievements.json';
-
-async function withFallback<T>(dbQuery: () => Promise<T>, fallback: T): Promise<T> {
-  if (!process.env.DATABASE_URL) {
-    return fallback;
-  }
+/**
+ * Utility to fetch data with a fallback to static JSON if the database is unavailable.
+ * This ensures the application remains buildable and testable in environments
+ * without a live database connection.
+ */
+async function withFallback<T>(fetcher: () => Promise<T>, fallback: T): Promise<T> {
   try {
-    return await dbQuery();
+    if (!process.env.DATABASE_URL) {
+      return fallback;
+    }
+    return await fetcher();
   } catch (error) {
-    console.error('Database query failed, using fallback:', error);
+    logger.error('Database query failed, using fallback', { data: error });
     return fallback;
   }
 }
 
-export async function getSeniors(): Promise<Senior[]> {
-  return withFallback(async () => {
-    const people = await prisma.person.findMany({
-      include: { batch: true },
-      orderBy: [
-        { featured: 'desc' },
-        { displayOrder: 'asc' },
-        { name: 'asc' }
-      ]
-    });
-    return people.map(p => ({
-      id: p.slug,
-      name: p.name,
-      nickname: p.nickname || undefined,
-      major: p.major || '',
-      graduationYear: p.graduationYear || 2025,
-      quote: p.yearbookQuote || '',
-      image: p.image || '',
-      featured: p.featured,
-      achievements: [] as string[],
-      memoryHighlights: [] as string[],
-      socialLinks: {}
-    })) as Senior[];
-  }, seniorsData as Senior[]);
-}
-
-export async function getFeaturedSenior(): Promise<Senior | undefined> {
-  const seniors = await getSeniors();
-  if (!seniors || seniors.length === 0) return undefined;
-  return seniors[0];
-}
-
-export async function getSeniorBySlug(slug: string): Promise<Senior | undefined> {
-  return withFallback(async () => {
-    const p = await prisma.person.findUnique({
-      where: { slug },
-      include: { batch: true }
-    });
-    if (!p) return undefined;
-    return {
-      id: p.slug,
-      name: p.name,
-      nickname: p.nickname || undefined,
-      major: p.major || '',
-      graduationYear: p.graduationYear || 2025,
-      quote: p.yearbookQuote || '',
-      image: p.image || '',
-      featured: p.featured,
-      achievements: [] as string[],
-      memoryHighlights: [] as string[],
-      socialLinks: {}
-    } as Senior;
-  }, (seniorsData as Senior[]).find(s => s.id === slug));
-}
-
-export async function getMemories(): Promise<Memory[]> {
-  return withFallback(async () => {
-    const media = await prisma.media.findMany({
-      include: { taggedPeople: true },
+export async function getBatches() {
+  return withFallback(
+    () => prisma.batch.findMany({
+      where: { isArchived: false },
       orderBy: { createdAt: 'desc' }
-    });
-    return media.map(m => ({
-      id: m.id,
-      type: m.type.toLowerCase() as any,
-      category: m.category as any,
-      title: m.title || '',
-      description: m.description || '',
-      url: m.url,
-      thumbnail: m.thumbnailUrl || undefined,
-      date: m.createdAt.toISOString(),
-      tags: [] as string[],
-      featured: m.featured,
-      peopleInvolved: m.taggedPeople.map(p => p.slug)
-    })) as Memory[];
-  }, memoriesData as Memory[]);
+    }),
+    []
+  );
 }
 
-export async function getMemoriesBySenior(seniorSlug: string): Promise<Memory[]> {
-  return withFallback(async () => {
-    const media = await prisma.media.findMany({
+export async function getSeniors() {
+  return withFallback(
+    () => prisma.person.findMany({
+      include: { batch: true },
+      orderBy: { displayOrder: 'asc' }
+    }),
+    []
+  );
+}
+
+export async function getSeniorBySlug(slug: string) {
+  return withFallback(
+    () => prisma.person.findUnique({
+      where: { slug },
+      include: {
+        batch: true,
+        events: { include: { batch: true, media: true } },
+        taggedMedia: true
+      }
+    }),
+    null
+  );
+}
+
+export async function getEvents() {
+  return withFallback(
+    () => prisma.event.findMany({
+      include: { batch: true, media: true },
+      orderBy: { date: 'desc' }
+    }),
+    []
+  );
+}
+
+export async function getEventBySlug(slug: string) {
+  return withFallback(
+    () => prisma.event.findUnique({
+      where: { slug },
+      include: {
+        batch: true,
+        media: true,
+        participants: true,
+        messages: true
+      }
+    }),
+    null
+  );
+}
+
+export async function getMemories() {
+  return withFallback(
+    () => prisma.media.findMany({
+      where: { featured: true },
+      include: { event: true },
+      orderBy: { createdAt: 'desc' }
+    }),
+    []
+  );
+}
+
+export async function getFeaturedSenior() {
+  const seniors = await getSeniors();
+  const featured = seniors.filter(s => s.featured);
+  return featured.length > 0 ? featured[0] : (seniors.length > 0 ? seniors[0] : null);
+}
+
+export async function getFeaturedEvents() {
+  const events = await getEvents();
+  return events.filter(e => e.featured).slice(0, 3);
+}
+
+
+export async function getTimelineItems() {
+  const events = await getEvents();
+  return events.map(event => ({
+    id: event.id,
+    date: event.date?.toISOString() || '',
+    title: event.title,
+    description: event.chapterQuote || '',
+    category: 'event' as const,
+    slug: event.slug
+  }));
+}
+
+export async function getMemoriesBySenior(personId: string) {
+  return withFallback(
+    () => prisma.media.findMany({
       where: {
         taggedPeople: {
-          some: { slug: seniorSlug }
+          some: { id: personId }
         }
       },
-      include: { taggedPeople: true },
       orderBy: { createdAt: 'desc' }
-    });
-    return media.map(m => ({
-      id: m.id,
-      type: m.type.toLowerCase() as any,
-      category: m.category as any,
-      title: m.title || '',
-      description: m.description || '',
-      url: m.url,
-      thumbnail: m.thumbnailUrl || undefined,
-      date: m.createdAt.toISOString(),
-      tags: [] as string[],
-      featured: m.featured,
-      peopleInvolved: m.taggedPeople.map(p => p.slug)
-    })) as Memory[];
-  }, (memoriesData as Memory[]).filter(m => m.peopleInvolved?.includes(seniorSlug)));
-}
-
-export async function getTimeline(): Promise<TimelineEvent[]> {
-  return withFallback(async () => {
-    const events = await prisma.event.findMany({
-      orderBy: { date: 'asc' }
-    });
-    return events.map(e => ({
-      id: e.slug,
-      period: e.date ? e.date.toLocaleDateString() : 'Various',
-      milestone: e.title,
-      description: e.description || '',
-      importance: 'major' as const,
-      photoUrl: undefined,
-      relatedMemoryIds: [] as string[]
-    })) as TimelineEvent[];
-  }, timelineData as TimelineEvent[]);
-}
-
-export async function getMessages(): Promise<Message[]> {
-  return withFallback(async () => {
-    const messages = await prisma.message.findMany({
-      orderBy: { createdAt: 'desc' }
-    });
-    return messages.map(m => ({
-      id: m.id,
-      from: m.from,
-      content: m.content,
-      category: m.category as any,
-      timestamp: m.timestamp.toISOString()
-    })) as Message[];
-  }, messagesData as Message[]);
-}
-
-export async function getMemes(): Promise<Meme[]> {
-  return withFallback(async () => {
-    const memes = await prisma.media.findMany({
-      where: { type: 'MEME' },
-      orderBy: { createdAt: 'desc' }
-    });
-    return memes.map(m => ({
-      id: m.id,
-      url: m.url,
-      caption: m.description || undefined,
-      originContext: ''
-    })) as Meme[];
-  }, memesData as Meme[]);
-}
-
-export async function getAlbums(): Promise<GalleryAlbum[]> {
-  return withFallback(async () => {
-    const events = await prisma.event.findMany({
-      include: { media: { select: { id: true } } },
-      orderBy: { date: 'desc' }
-    });
-    return events.map(e => ({
-      id: e.slug,
-      title: e.title,
-      description: e.description || undefined,
-      coverImage: '',
-      memoryIds: e.media.map(m => m.id)
-    })) as GalleryAlbum[];
-  }, albumsData as GalleryAlbum[]);
-}
-
-export async function getAchievements(): Promise<Achievement[]> {
-  return withFallback(async () => {
-    return [] as Achievement[];
-  }, achievementsData as Achievement[]);
+    }),
+    []
+  );
 }

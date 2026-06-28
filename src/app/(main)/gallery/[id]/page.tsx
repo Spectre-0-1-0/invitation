@@ -2,7 +2,7 @@ import { Container } from "@/components/layout/Container";
 import { Section } from "@/components/layout/Section";
 import { Heading } from "@/components/ui/Heading";
 import { Badge } from "@/components/ui/Badge";
-import { getMemories } from "@/lib/data-fetcher";
+import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,17 +10,18 @@ import { ArrowLeft, Calendar, Tag, User } from "lucide-react";
 
 export async function generateMetadata({ params }: any) {
   const { id } = await params;
-  const memories = await getMemories();
-  const memory = memories.find(m => m.id === id);
+  const memory = await prisma.media.findUnique({
+    where: { id }
+  });
 
   if (!memory) return { title: "Memory Not Found" };
 
   return {
-    title: memory.title,
-    description: memory.description,
+    title: memory.title || "Archive Memory",
+    description: memory.description || "Captured moment from the Class of 2025.",
     openGraph: {
-      title: memory.title,
-      description: memory.description,
+      title: memory.title || "Archive Memory",
+      description: memory.description || "Captured moment from the Class of 2025.",
       images: [memory.url],
     },
   };
@@ -28,8 +29,13 @@ export async function generateMetadata({ params }: any) {
 
 export default async function MemoryDetailPage({ params }: any) {
   const { id } = await params;
-  const memories = await getMemories();
-  const memory = memories.find(m => m.id === id);
+  const memory = await prisma.media.findUnique({
+    where: { id },
+    include: {
+      event: true,
+      taggedPeople: true
+    }
+  });
 
   if (!memory) notFound();
 
@@ -43,69 +49,83 @@ export default async function MemoryDetailPage({ params }: any) {
           <ArrowLeft size={14} /> Back to Gallery
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+          {/* Main Content */}
           <div className="lg:col-span-8">
-            <div className="bg-white p-4 shadow-scrapbook border border-parchment-muted rounded-sm rotate-1">
-              <div className="aspect-video bg-parchment-muted relative overflow-hidden rounded-sm">
+            <div className="bg-white p-4 rounded-md shadow-scrapbook border border-parchment-muted">
+              <div className="relative aspect-video lg:aspect-[16/10] bg-parchment-muted rounded-sm overflow-hidden">
                 <Image
                   src={memory.url}
-                  alt={memory.title}
+                  alt={memory.title || "Archive Memory"}
                   fill
                   className="object-cover"
                   priority
                 />
               </div>
             </div>
+
+            {memory.description && (
+              <div className="mt-12 p-10 bg-parchment-base rounded-md border border-parchment-dark/10 relative">
+                <div className="absolute top-0 left-8 w-8 h-8 bg-parchment-base border-l border-t border-parchment-dark/10 rotate-45 -translate-y-1/2" />
+                <p className="text-xl font-serif italic text-heritage-navy leading-relaxed">
+                  &quot;{memory.description}&quot;
+                </p>
+              </div>
+            )}
           </div>
 
-          <div className="lg:col-span-4 flex flex-col justify-center">
-            <Badge variant="outline" className="w-fit mb-6 uppercase tracking-widest">
-              {memory.category}
-            </Badge>
+          {/* Sidebar */}
+          <div className="lg:col-span-4 space-y-12">
+            <div className="space-y-6">
+              <Badge variant="outline" className="uppercase tracking-widest border-parchment-dark">
+                {memory.type}
+              </Badge>
+              <Heading level={1} className="text-4xl md:text-5xl">{memory.title || 'Untitled Memory'}</Heading>
+            </div>
 
-            <Heading level={1} className="text-4xl md:text-5xl mb-6">
-              {memory.title}
-            </Heading>
-
-            <p className="text-lg text-charcoal-muted font-serif italic leading-relaxed mb-10">
-              &quot;{memory.description}&quot;
-            </p>
-
-            <div className="space-y-6 pt-8 border-t border-parchment-muted">
+            <div className="space-y-8 py-8 border-y border-parchment-muted">
               <div className="flex items-center gap-4 text-sm">
                 <Calendar size={16} className="text-champagne-gold" />
-                <span className="font-mono text-charcoal-muted">{new Date(memory.date).toLocaleDateString()}</span>
+                <span className="font-mono text-charcoal-muted">{new Date(memory.createdAt).toLocaleDateString()}</span>
               </div>
 
-              {memory.peopleInvolved && memory.peopleInvolved.length > 0 && (
+              {memory.taggedPeople && memory.taggedPeople.length > 0 && (
                 <div className="flex items-start gap-4 text-sm">
                   <User size={16} className="text-champagne-gold mt-1" />
                   <div className="flex flex-wrap gap-2">
-                    {memory.peopleInvolved.map(slug => (
+                    {memory.taggedPeople.map(person => (
                       <Link
-                        key={slug}
-                        href={`/people/${slug}`}
+                        key={person.id}
+                        href={`/people/${person.slug}`}
                         className="px-3 py-1 bg-parchment-base rounded-full text-[10px] font-bold uppercase hover:bg-champagne-gold hover:text-white transition-colors"
                       >
-                        {slug.replace('-', ' ')}
+                        {person.name}
                       </Link>
                     ))}
                   </div>
                 </div>
               )}
 
-              {memory.tags && memory.tags.length > 0 && (
-                <div className="flex items-start gap-4 text-sm">
-                  <Tag size={16} className="text-champagne-gold mt-1" />
-                  <div className="flex flex-wrap gap-2">
-                    {memory.tags.map(tag => (
-                      <Badge key={tag} variant="secondary" className="text-[9px] lowercase">
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </div>
+              {memory.event && (
+                <div className="flex items-center gap-4 text-sm">
+                  <Tag size={16} className="text-champagne-gold" />
+                  <Link
+                    href={`/events/${memory.event.slug}`}
+                    className="text-heritage-navy font-bold hover:text-champagne-gold transition-colors"
+                  >
+                    Part of {memory.event.title}
+                  </Link>
                 </div>
               )}
+            </div>
+
+            <div className="pt-4">
+               <div className="bg-white p-6 border border-parchment-muted rounded-md rotate-1 shadow-sm">
+                  <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-charcoal-muted mb-4 block opacity-50">Archive Notes</p>
+                  <p className="text-xs text-charcoal-muted italic leading-relaxed">
+                    This item is part of the official Class of 2025 Digital Archive. All rights reserved by the original contributors.
+                  </p>
+               </div>
             </div>
           </div>
         </div>

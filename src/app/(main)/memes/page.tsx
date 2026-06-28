@@ -2,15 +2,29 @@ import { Container } from "@/components/layout/Container";
 import { Section } from "@/components/layout/Section";
 import { Heading } from "@/components/ui/Heading";
 import { FadeIn } from "@/components/animations/FadeIn";
-import { getMemes } from "@/lib/data-fetcher";
+import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import { Laugh } from "lucide-react";
-import Image from "next/image";
 import { EmptyState } from "@/components/shared/EmptyState";
+import Image from "next/image";
 
 export const metadata = {
-  title: "Hall of Memes",
-  description: "Celebrating the inside jokes and shared humor of the Class of 2025."
+  title: "The Meme Archive",
+  description: "A curated collection of the Class of 2025's finest inside jokes and internet culture."
 };
+
+async function getMemes() {
+  try {
+    if (!process.env.DATABASE_URL) return [];
+    return await prisma.media.findMany({
+      where: { type: 'MEME' },
+      orderBy: { createdAt: 'desc' }
+    });
+  } catch (error) {
+    logger.error("Failed to fetch memes", { data: error });
+    return [];
+  }
+}
 
 export default async function MemesPage() {
   const memes = await getMemes();
@@ -23,10 +37,10 @@ export default async function MemesPage() {
             <div className="p-4 bg-burnt-sienna text-white rounded-full mb-8 shadow-xl shadow-burnt-sienna/20 inline-block">
               <Laugh size={28} />
             </div>
-            <Heading level={1} className="text-5xl md:text-7xl mb-8">The Hall of <span className="italic font-light">Memes</span></Heading>
+            <Heading level={1} className="text-5xl md:text-7xl mb-8">The <span className="italic font-light">Meme</span> Archive</Heading>
             <p className="text-lg md:text-xl text-charcoal-muted max-w-2xl mx-auto font-serif italic">
-               Because a major without memes is just... a degree.
-               Celebrating the inside jokes that made the hard weeks easier.
+               If you know, you know. The inside jokes, the shared struggles,
+               and the humor that kept us going through finals week.
             </p>
           </FadeIn>
         </div>
@@ -34,27 +48,23 @@ export default async function MemesPage() {
         {memes.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
             {memes.map((meme, i) => (
-              <FadeIn key={meme.id} delay={i * 0.05}>
-                <div className="bg-white p-4 border border-parchment-muted shadow-polaroid rounded-sm group hover:border-champagne-gold transition-all duration-500 hover:-rotate-1">
-                  <div className="aspect-square bg-parchment-muted mb-6 rounded-sm overflow-hidden relative">
-                    {meme.url ? (
-                      <Image
-                        src={meme.url}
-                        alt={meme.caption || "Class Meme"}
-                        fill
-                        className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-charcoal-muted/20 font-serif text-4xl -rotate-12 select-none">MEME</div>
-                    )}
+              <FadeIn key={meme.id} delay={i * 0.1}>
+                <div className="bg-white p-4 rounded-md shadow-scrapbook border border-parchment-muted group hover:-rotate-1 transition-all duration-500">
+                  <div className="aspect-square bg-parchment-muted overflow-hidden relative rounded-sm">
+                    <Image
+                      src={meme.url}
+                      alt={meme.title || "Archive Meme"}
+                      fill
+                      className="object-contain"
+                    />
                   </div>
-                  <div className="p-2">
-                    <p className="text-heritage-navy font-serif text-lg text-center leading-snug">&quot;{meme.caption}&quot;</p>
-                    {meme.originContext && (
-                      <div className="mt-6 pt-6 border-t border-parchment-muted text-center">
+                  <div className="p-4">
+                    {meme.title && <h3 className="font-serif text-xl text-heritage-navy mb-2">{meme.title}</h3>}
+                    {meme.description && (
+                      <div className="mt-4 p-4 rounded bg-parchment-muted text-center">
                         <p className="text-[10px] text-charcoal-muted italic leading-relaxed">
                           <span className="font-bold text-champagne-gold uppercase not-italic block mb-2 tracking-widest">The Context</span>
-                          {meme.originContext}
+                          {meme.description}
                         </p>
                       </div>
                     )}
