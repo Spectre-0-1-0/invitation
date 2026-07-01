@@ -15,7 +15,9 @@ export class StorageService {
   private provider: StorageProvider;
 
   constructor() {
-    const providerType = process.env.STORAGE_PROVIDER || 'local';
+    // In production (Vercel), we should default to Supabase
+    const isProduction = process.env.NODE_ENV === 'production';
+    const providerType = process.env.STORAGE_PROVIDER || (isProduction ? 'supabase' : 'local');
 
     if (providerType === 'supabase') {
       this.provider = new SupabaseStorageProvider();

@@ -20,8 +20,16 @@ async function getMemes() {
       where: { type: 'MEME' },
       orderBy: { createdAt: 'desc' }
     });
-  } catch (error) {
-    logger.error("Failed to fetch memes", { data: error });
+  } catch (error: any) {
+    const isPrismaError = error?.name === 'PrismaClientInitializationError' ||
+                         error?.code === 'P1001' ||
+                         error?.message?.includes('Can\'t reach database server');
+
+    if (isPrismaError) {
+      logger.warn('Failed to fetch memes due to connection error during build');
+    } else {
+      logger.error("Failed to fetch memes", { data: error });
+    }
     return [];
   }
 }

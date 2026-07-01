@@ -5,7 +5,7 @@ import { Upload, X, Loader2, FileIcon, FolderIcon, ArchiveIcon, CheckCircle2, Al
 import { useDropzone } from 'react-dropzone';
 
 interface MediaUploaderProps {
-  eventId: string;
+  eventId?: string;
   onUploadComplete?: () => void;
 }
 
@@ -108,7 +108,7 @@ export function MediaUploader({ eventId, onUploadComplete }: MediaUploaderProps)
           isDragActive ? 'border-[#D4AF37] bg-[#D4AF37]/5' : 'border-[#D4AF37]/20 bg-[#FDFCF8] hover:border-[#D4AF37]/40'
         }`}
       >
-        <input {...getInputProps()} webkitdirectory="" mozdirectory="" />
+        <input {...getInputProps()} />
         <div className="flex flex-col items-center">
           <Upload className="w-12 h-12 text-[#D4AF37]/40 mb-4" />
           <h3 className="text-lg font-playfair text-[#1A2B48] mb-1">

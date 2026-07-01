@@ -3,16 +3,39 @@ import { Section } from "@/components/layout/Section";
 import { Heading } from "@/components/ui/Heading";
 import { Badge } from "@/components/ui/Badge";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Calendar, Tag, User } from "lucide-react";
 
+async function getMemory(id: string) {
+  try {
+    if (!process.env.DATABASE_URL) return null;
+    return await prisma.media.findUnique({
+      where: { id },
+      include: {
+        event: true,
+        taggedPeople: true
+      }
+    });
+  } catch (error: any) {
+    const isPrismaError = error?.name === 'PrismaClientInitializationError' ||
+                         error?.code === 'P1001' ||
+                         error?.message?.includes('Can\'t reach database server');
+
+    if (isPrismaError) {
+      logger.warn('Failed to fetch memory due to connection error during build');
+    } else {
+      logger.error("Failed to fetch memory", { data: error });
+    }
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }: any) {
   const { id } = await params;
-  const memory = await prisma.media.findUnique({
-    where: { id }
-  });
+  const memory = await getMemory(id);
 
   if (!memory) return { title: "Memory Not Found" };
 
@@ -29,13 +52,7 @@ export async function generateMetadata({ params }: any) {
 
 export default async function MemoryDetailPage({ params }: any) {
   const { id } = await params;
-  const memory = await prisma.media.findUnique({
-    where: { id },
-    include: {
-      event: true,
-      taggedPeople: true
-    }
-  });
+  const memory = await getMemory(id);
 
   if (!memory) notFound();
 
