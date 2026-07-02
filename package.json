@@ -12,18 +12,21 @@
     "@prisma/client": "^6.19.3",
     "@supabase/supabase-js": "^2.108.2",
     "adm-zip": "^0.5.10",
+    "autoprefixer": "^10.5.2",
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
     "formdata-node": "^6.0.3",
     "framer-motion": "^11.11.11",
     "inngest": "^3.22.12",
     "lucide-react": "^0.454.0",
-    "next": "15.0.3",
+    "next": "^15.5.20",
+    "postcss": "^8.5.10",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-dropzone": "^15.0.0",
     "sharp": "^0.33.5",
-    "tailwind-merge": "^2.5.4"
+    "tailwind-merge": "^2.5.4",
+    "tailwindcss": "^3.4.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
@@ -32,12 +35,9 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "autoprefixer": "^10.5.2",
     "eslint": "^8",
-    "eslint-config-next": "15.0.3",
-    "postcss": "^8",
+    "eslint-config-next": "^15.5.20",
     "prisma": "^6.19.3",
-    "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }
 }
