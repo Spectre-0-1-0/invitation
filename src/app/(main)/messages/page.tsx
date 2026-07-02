@@ -23,8 +23,16 @@ async function getMessages() {
       },
       orderBy: { createdAt: 'desc' }
     });
-  } catch (error) {
-    logger.error("Failed to fetch messages", { data: error });
+  } catch (error: any) {
+    const isPrismaError = error?.name === 'PrismaClientInitializationError' ||
+                         error?.code === 'P1001' ||
+                         error?.message?.includes('Can\'t reach database server');
+
+    if (isPrismaError) {
+      logger.warn('Failed to fetch messages due to connection error during build');
+    } else {
+      logger.error("Failed to fetch messages", { data: error });
+    }
     return [];
   }
 }

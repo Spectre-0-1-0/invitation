@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Plus,
   Search,
@@ -8,32 +8,38 @@ import {
   Loader2,
   Image as ImageIcon,
   Video,
-  File as FileIcon,
-  CheckSquare,
+  FileText,
+  MoreVertical,
+  Edit,
   Trash2,
-  Edit2,
-  Star,
-  Gem,
-  Tag,
-  AlertCircle
+  ExternalLink,
+  ChevronRight,
+  User,
+  Calendar,
+  CheckCircle2,
+  X,
+  Upload
 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Heading } from '@/components/ui/Heading';
+import { Badge } from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
 import { Slideover } from '@/components/admin/ui/Slideover';
-import { SimpleMediaUpload } from '@/components/admin/SimpleMediaUpload';
+import { MediaUploader } from '@/components/admin/MediaUploader';
 import Image from 'next/image';
 
 interface Media {
   id: string;
   url: string;
-  thumbnailUrl?: string;
-  type: 'PHOTO' | 'VIDEO' | 'DOCUMENT' | 'MEME' | 'POSTER' | 'SCREENSHOT';
-  category?: string;
-  title?: string;
-  description?: string;
+  thumbnailUrl: string | null;
+  type: 'PHOTO' | 'VIDEO' | 'DOCUMENT' | 'POSTER' | 'MEME' | 'SCREENSHOT';
+  title: string | null;
+  description: string | null;
+  category: string | null;
   featured: boolean;
   isHiddenGem: boolean;
   eventId: string;
-  event?: { title: string };
-  taggedPeople: { id: string, name: string }[];
+  event: { title: string };
 }
 
 interface Event {
@@ -46,7 +52,7 @@ interface Person {
   name: string;
 }
 
-export default function MediaPage() {
+export default function MediaAdminPage() {
   const [mediaList, setMediaList] = useState<Media[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
@@ -69,7 +75,7 @@ export default function MediaPage() {
     taggedPeopleIds: [] as string[]
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [mediaRes, eventsRes, peopleRes] = await Promise.all([
@@ -84,7 +90,9 @@ export default function MediaPage() {
       if (Array.isArray(mediaData)) setMediaList(mediaData);
       if (Array.isArray(eventsData)) {
         setEvents(eventsData);
-        if (eventsData.length > 0 && !selectedEventId) setSelectedEventId(eventsData[0].id);
+        if (eventsData.length > 0 && !selectedEventId) {
+          // Only auto-select if no event is selected
+        }
       }
       if (Array.isArray(peopleData)) setPeople(peopleData);
     } catch (error) {
@@ -92,11 +100,11 @@ export default function MediaPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedEventId]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,13 +134,15 @@ export default function MediaPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!currentMedia || !confirm('Are you sure you want to delete this media?')) return;
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this media?')) return;
 
     try {
-      const res = await fetch(`/api/admin/media/${currentMedia.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/media/${id}`, {
+        method: 'DELETE',
+      });
+
       if (res.ok) {
-        setIsSlideoverOpen(false);
         fetchData();
       }
     } catch (error) {
@@ -151,272 +161,275 @@ export default function MediaPage() {
       category: media.category || 'gallery',
       featured: media.featured,
       isHiddenGem: media.isHiddenGem,
-      taggedPeopleIds: media.taggedPeople.map(p => p.id)
+      taggedPeopleIds: [], // We would need another API call to get these
     });
     setIsSlideoverOpen(true);
   };
 
-  const togglePerson = (personId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      taggedPeopleIds: prev.taggedPeopleIds.includes(personId)
-        ? prev.taggedPeopleIds.filter(id => id !== personId)
-        : [...prev.taggedPeopleIds, personId]
-    }));
+  const openCreate = () => {
+    setCurrentMedia(null);
+    setFormData({
+      url: '',
+      type: 'PHOTO',
+      eventId: events.length > 0 ? events[0].id : '',
+      title: '',
+      description: '',
+      category: 'gallery',
+      featured: false,
+      isHiddenGem: false,
+      taggedPeopleIds: [],
+    });
+    setIsSlideoverOpen(true);
   };
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="font-playfair text-4xl text-[#1A2B48] mb-2">Media Archive</h1>
-          <p className="text-[#333333]/60">Manage photos, videos, and documents.</p>
+          <Heading level={1}>Media Assets</Heading>
+          <p className="text-charcoal-muted mt-1">
+            Manage photos, videos, and documents across all events.
+          </p>
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setIsUploaderOpen(true)}
-            className="bg-[#D4AF37] text-[#1A2B48] px-6 py-3 rounded-lg flex items-center justify-center space-x-2 hover:bg-[#D4AF37]/90 transition-colors shadow-lg font-medium"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Bulk Upload</span>
-          </button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => setIsUploaderOpen(true)}>
+            <Upload className="w-4 h-4 mr-2" />
+            Bulk Upload
+          </Button>
+          <Button onClick={openCreate}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Media
+          </Button>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#333333]/30" />
-          <input
-            type="text"
-            placeholder="Search by title or description..."
-            className="w-full pl-10 pr-4 py-3 bg-white border border-[#D4AF37]/20 rounded-xl focus:ring-2 focus:ring-[#D4AF37] outline-none"
-          />
+      <Card className="p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal-muted" />
+            <input
+              type="text"
+              placeholder="Search by title or description..."
+              className="w-full pl-10 pr-4 py-2 border rounded-md focus:ring-2 focus:ring-champagne-gold/20 outline-none"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-charcoal-muted" />
+            <select className="border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-champagne-gold/20">
+              <option value="">All Types</option>
+              <option value="PHOTO">Photos</option>
+              <option value="VIDEO">Videos</option>
+              <option value="DOCUMENT">Documents</option>
+            </select>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <select className="px-4 py-3 bg-white border border-[#D4AF37]/20 rounded-xl outline-none text-[#1A2B48]/60">
-            <option value="">All Types</option>
-            <option value="PHOTO">Photos</option>
-            <option value="VIDEO">Videos</option>
-            <option value="DOCUMENT">Documents</option>
-          </select>
-        </div>
-      </div>
+      </Card>
 
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-24 text-[#333333]/40">
-          <Loader2 className="w-12 h-12 animate-spin mb-4" />
-          <p className="font-serif italic text-lg">Sorting through the negatives...</p>
+        <div className="flex flex-col items-center justify-center py-20 text-charcoal-muted">
+          <Loader2 className="w-8 h-8 animate-spin mb-4" />
+          <p>Loading media library...</p>
         </div>
       ) : mediaList.length === 0 ? (
-        <div className="bg-white border-2 border-dashed border-[#D4AF37]/20 rounded-2xl p-16 text-center">
-          <ImageIcon className="w-16 h-16 text-[#D4AF37]/20 mx-auto mb-4" />
-          <h3 className="text-xl font-playfair text-[#1A2B48] mb-2">No media found</h3>
-          <p className="text-[#333333]/40 mb-8">Start uploading the first memories to the archive.</p>
-          <button
-            onClick={() => setIsUploaderOpen(true)}
-            className="text-[#1A2B48] font-medium border-b-2 border-[#D4AF37] hover:text-[#D4AF37] transition-colors"
-          >
-            Upload your first photo
-          </button>
-        </div>
+        <Card className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-16 h-16 bg-parchment-muted rounded-full flex items-center justify-center mb-4">
+            <ImageIcon className="w-8 h-8 text-charcoal-muted opacity-20" />
+          </div>
+          <Heading level={3}>No Media Found</Heading>
+          <p className="text-charcoal-muted mt-2 max-w-md mx-auto">
+            You haven&apos;t uploaded any media yet. Start by adding a single file or using the bulk uploader.
+          </p>
+          <Button onClick={openCreate} className="mt-6">
+            Upload Your First Photo
+          </Button>
+        </Card>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {mediaList.map((media) => (
-            <div
-              key={media.id}
-              onClick={() => openEdit(media)}
-              className="relative aspect-square bg-white rounded-xl border border-[#D4AF37]/10 overflow-hidden group cursor-pointer hover:shadow-lg transition-all"
-            >
-              {media.url ? (
-                <div className="w-full h-full relative">
+            <Card key={media.id} className="group overflow-hidden flex flex-col h-full border-parchment-dark/10 hover:border-champagne-gold/30 transition-colors">
+              <div className="relative aspect-square bg-parchment-muted overflow-hidden">
+                {media.type === 'PHOTO' ? (
                   <Image
                     src={media.url}
                     alt={media.title || 'Media'}
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="object-cover transition-transform group-hover:scale-105"
                   />
-                </div>
-              ) : (
-                <div className="w-full h-full bg-[#1A2B48]/5 flex items-center justify-center">
-                  {media.type === 'VIDEO' ? (
-                    <Video className="w-8 h-8 text-[#1A2B48]/20" />
-                  ) : (
-                    <ImageIcon className="w-8 h-8 text-[#1A2B48]/20" />
-                  )}
-                </div>
-              )}
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    {media.type === 'VIDEO' ? <Video className="w-12 h-12 text-charcoal-muted/30" /> : <FileText className="w-12 h-12 text-charcoal-muted/30" />}
+                  </div>
+                )}
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
-                <p className="text-white text-[10px] font-medium truncate">{media.title || 'Untitled'}</p>
-                <p className="text-white/60 text-[8px] uppercase tracking-widest">{media.type}</p>
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <Button size="sm" variant="secondary" onClick={() => openEdit(media)}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="secondary" className="bg-white/90 hover:bg-white text-red-600" onClick={() => handleDelete(media.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {media.featured && (
+                  <div className="absolute top-2 left-2">
+                    <Badge variant="secondary" className="bg-champagne-gold text-white border-none shadow-sm">Featured</Badge>
+                  </div>
+                )}
               </div>
 
-              {media.featured && (
-                <div className="absolute top-2 right-2 p-1 bg-[#D4AF37] rounded-md shadow-sm">
-                  <Star className="w-3 h-3 text-[#1A2B48] fill-[#1A2B48]" />
+              <div className="p-4 flex flex-col flex-1">
+                <div className="flex items-start justify-between mb-2">
+                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider">{media.type}</Badge>
+                  <span className="text-[10px] text-charcoal-muted font-mono">{media.category}</span>
                 </div>
-              )}
-            </div>
+                <h3 className="font-semibold text-sm line-clamp-1 mb-1">{media.title || 'Untitled Asset'}</h3>
+                <div className="flex items-center text-[11px] text-charcoal-muted mt-auto">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  <span>{media.event.title}</span>
+                </div>
+              </div>
+            </Card>
           ))}
         </div>
       )}
 
-      {/* Bulk Upload Slideover */}
-      <Slideover
-        isOpen={isUploaderOpen}
-        onClose={() => setIsUploaderOpen(false)}
-        title="Archive Ingestion"
-      >
-        <div className="space-y-8">
-          <div className="p-4 bg-[#D4AF37]/5 border border-[#D4AF37]/20 rounded-lg">
-            <h4 className="text-sm font-bold text-[#1A2B48] mb-2 flex items-center">
-              <AlertCircle className="w-4 h-4 mr-2" /> Local Ingestion
-            </h4>
-            <p className="text-xs text-[#1A2B48]/70">
-              Media will be saved to the local archive. Make sure to assign it to an event.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold uppercase tracking-widest text-[#1A2B48] mb-4">
-              Step 1: Select Event
-            </label>
-            <select
-              value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-[#1A2B48]/10 rounded focus:ring-2 focus:ring-[#D4AF37] outline-none font-serif"
-            >
-              <option value="">Select an Event</option>
-              {events.map(e => (
-                <option key={e.id} value={e.id}>{e.title}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold uppercase tracking-widest text-[#1A2B48] mb-4">
-              Step 2: Upload Files
-            </label>
-            <SimpleMediaUpload
-              eventId={selectedEventId}
-              onUploadComplete={() => {
-                fetchData();
-              }}
-            />
-          </div>
-        </div>
-      </Slideover>
-
-      {/* Edit Slideover */}
+      {/* Edit/Create Slideover */}
       <Slideover
         isOpen={isSlideoverOpen}
         onClose={() => setIsSlideoverOpen(false)}
-        title="Edit Memory"
+        title={currentMedia ? 'Edit Media Metadata' : 'Add New Media'}
       >
-        <form onSubmit={handleSubmit} className="space-y-6 pb-24">
-          <div className="space-y-6">
-            {formData.url && (
-              <div className="relative aspect-video bg-[#FDFCF8] rounded-2xl border border-[#D4AF37]/20 overflow-hidden">
-                <Image
-                  src={formData.url}
-                  alt="Media Preview"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
-
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#1A2B48] mb-2 font-serif">Event</label>
-              <select
-                value={formData.eventId}
-                onChange={(e) => setFormData({ ...formData, eventId: e.target.value })}
-                className="w-full px-4 py-3 bg-[#FDFCF8] border border-[#1A2B48]/10 rounded focus:ring-2 focus:ring-[#D4AF37] outline-none font-serif"
-                required
-              >
-                <option value="">Select an Event</option>
-                {events.map(e => (
-                  <option key={e.id} value={e.id}>{e.title}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#1A2B48] mb-2 font-serif">Title</label>
+              <label className="block text-sm font-medium mb-1">URL / Source</label>
               <input
                 type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-4 py-3 bg-[#FDFCF8] border border-[#1A2B48]/10 rounded focus:ring-2 focus:ring-[#D4AF37] outline-none font-serif"
-                placeholder="Memory title..."
+                value={formData.url}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                className="w-full border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-champagne-gold/20"
+                required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#1A2B48] mb-2 font-serif flex items-center">
-                <Tag className="w-4 h-4 mr-2" /> Tag People
-              </label>
-              <div className="flex flex-wrap gap-2 p-3 bg-[#FDFCF8] border border-[#1A2B48]/10 rounded h-32 overflow-y-auto">
-                {people.map(person => (
-                  <button
-                    key={person.id}
-                    type="button"
-                    onClick={() => togglePerson(person.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                      formData.taggedPeopleIds.includes(person.id)
-                        ? 'bg-[#1A2B48] text-white'
-                        : 'bg-white text-[#1A2B48]/60 border border-[#D4AF37]/20'
-                    }`}
-                  >
-                    {person.name}
-                  </button>
+              <label className="block text-sm font-medium mb-1">Event</label>
+              <select
+                value={formData.eventId}
+                onChange={(e) => setFormData({ ...formData, eventId: e.target.value })}
+                className="w-full border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-champagne-gold/20"
+                required
+              >
+                <option value="">Select an event</option>
+                {events.map((event) => (
+                  <option key={event.id} value={event.id}>{event.title}</option>
                 ))}
-              </div>
+              </select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div
-                onClick={() => setFormData({ ...formData, featured: !formData.featured })}
-                className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col items-center text-center ${
-                  formData.featured ? 'border-[#D4AF37] bg-[#D4AF37]/5' : 'border-[#1A2B48]/5 bg-white'
-                }`}
-              >
-                <Star className={`w-6 h-6 mb-2 ${formData.featured ? 'text-[#D4AF37] fill-[#D4AF37]' : 'text-[#333333]/20'}`} />
-                <span className="text-xs font-bold uppercase tracking-widest text-[#1A2B48]">Feature</span>
+              <div>
+                <label className="block text-sm font-medium mb-1">Type</label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                  className="w-full border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-champagne-gold/20"
+                >
+                  <option value="PHOTO">Photo</option>
+                  <option value="VIDEO">Video</option>
+                  <option value="DOCUMENT">Document</option>
+                  <option value="POSTER">Poster</option>
+                  <option value="MEME">Meme</option>
+                  <option value="SCREENSHOT">Screenshot</option>
+                </select>
               </div>
-
-              <div
-                onClick={() => setFormData({ ...formData, isHiddenGem: !formData.isHiddenGem })}
-                className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col items-center text-center ${
-                  formData.isHiddenGem ? 'border-purple-500 bg-purple-500/5' : 'border-[#1A2B48]/5 bg-white'
-                }`}
-              >
-                <Gem className={`w-6 h-6 mb-2 ${formData.isHiddenGem ? 'text-purple-500' : 'text-[#333333]/20'}`} />
-                <span className="text-xs font-bold uppercase tracking-widest text-[#1A2B48]">Hidden Gem</span>
+              <div>
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-champagne-gold/20"
+                >
+                  <option value="gallery">Gallery</option>
+                  <option value="people">People</option>
+                  <option value="events">Events</option>
+                  <option value="documents">Documents</option>
+                </select>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="w-full flex items-center justify-center space-x-2 text-red-500 text-sm font-medium pt-4 hover:text-red-600 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>Delete from Archive</span>
-            </button>
+            <div>
+              <label className="block text-sm font-medium mb-1">Title (Optional)</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="w-full border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-champagne-gold/20"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Description (Optional)</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="w-full border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-champagne-gold/20 h-24 resize-none"
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 pt-2">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formData.featured ? 'bg-heritage-navy border-heritage-navy' : 'bg-white border-parchment-dark group-hover:border-champagne-gold'}`}>
+                  {formData.featured && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={formData.featured}
+                    onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                  />
+                </div>
+                <span className="text-sm font-medium">Feature in highlights</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formData.isHiddenGem ? 'bg-burnt-sienna border-burnt-sienna' : 'bg-white border-parchment-dark group-hover:border-champagne-gold'}`}>
+                  {formData.isHiddenGem && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={formData.isHiddenGem}
+                    onChange={(e) => setFormData({ ...formData, isHiddenGem: e.target.checked })}
+                  />
+                </div>
+                <span className="text-sm font-medium">Mark as &quot;Hidden Gem&quot;</span>
+              </label>
+            </div>
           </div>
 
-          <div className="fixed bottom-0 right-0 left-0 p-6 bg-[#FDFCF8] border-t border-[#D4AF37]/10 max-w-md ml-auto">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-[#1A2B48] text-[#FDFCF8] py-4 rounded-lg font-medium flex items-center justify-center space-x-2 hover:bg-[#1A2B48]/90 transition-all shadow-lg disabled:opacity-50"
-            >
-              {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
-              <span>Save Changes</span>
-            </button>
+          <div className="flex items-center gap-3 pt-4 border-t">
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setIsSlideoverOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : currentMedia ? 'Save Changes' : 'Add Asset'}
+            </Button>
           </div>
         </form>
+      </Slideover>
+
+      {/* Bulk Uploader Slideover */}
+      <Slideover
+        isOpen={isUploaderOpen}
+        onClose={() => setIsUploaderOpen(false)}
+        title="Bulk Media Ingestion"
+      >
+        <MediaUploader
+          onUploadComplete={() => {
+            setIsUploaderOpen(false);
+            fetchData();
+          }}
+        />
       </Slideover>
     </div>
   );

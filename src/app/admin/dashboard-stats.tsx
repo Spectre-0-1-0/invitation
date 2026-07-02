@@ -1,7 +1,12 @@
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 export async function getArchiveStats() {
   try {
+    if (!process.env.DATABASE_URL) {
+      return null;
+    }
+
     const [batches, events, people, media, messages] = await Promise.all([
       prisma.batch.count(),
       prisma.event.count(),
@@ -27,8 +32,16 @@ export async function getArchiveStats() {
         totalIssues: orphanedMedia
       }
     };
-  } catch (error) {
-    console.error("Dashboard stats error:", error);
+  } catch (error: any) {
+    const isPrismaError = error?.name === 'PrismaClientInitializationError' ||
+                         error?.code === 'P1001' ||
+                         error?.message?.includes('Can\'t reach database server');
+
+    if (isPrismaError) {
+      logger.warn('Dashboard stats query failed due to connection error during build');
+    } else {
+      logger.error("Dashboard stats error:", error);
+    }
     return null;
   }
 }

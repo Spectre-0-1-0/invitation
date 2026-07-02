@@ -8,13 +8,27 @@ import { prisma } from './prisma';
  */
 async function withFallback<T>(fetcher: () => Promise<T>, fallback: T): Promise<T> {
   try {
+    // If DATABASE_URL is explicitly missing, we know we're in a fallback scenario
     if (!process.env.DATABASE_URL) {
       return fallback;
     }
+
+    // Attempt the fetcher, but handle potential connection errors specifically
     return await fetcher();
-  } catch (error) {
-    logger.error('Database query failed, using fallback', { data: error });
-    return fallback;
+  } catch (error: any) {
+    // Specific check for Prisma initialization/connection errors
+    const isPrismaError = error?.name === 'PrismaClientInitializationError' ||
+                         error?.code === 'P1001' ||
+                         error?.message?.includes('Can\'t reach database server');
+
+    if (isPrismaError) {
+      logger.error('Database query failed due to connection error, using fallback', { data: error.message });
+      return fallback;
+    }
+
+    // Log and rethrow other errors that might indicate logic bugs rather than environment issues
+    logger.error('Unexpected database query failure', { data: error });
+    throw error;
   }
 }
 
